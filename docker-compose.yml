@@ -1,0 +1,53 @@
+version: '3.8'
+
+networks:
+  market-net:
+    driver: bridge
+
+volumes:
+  redis_data:
+    name: contracts_redis_data
+
+services: 
+
+  postgresql:
+    image: docker.io/postgres:16.3
+    container_name: postgresql-uf
+    hostname: postgresql
+    ports:
+      - 5432:5432
+    networks:
+      - market-net
+    volumes:
+      - ./data/postgresql:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: marketflow
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d marketflow" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: contracts_redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+      - ./local/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-strongpassword}
+    restart: unless-stopped
+    networks:
+      - market-net
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
