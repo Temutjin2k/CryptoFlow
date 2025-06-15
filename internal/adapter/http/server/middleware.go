@@ -1,23 +1,9 @@
 package server
 
 import (
-	"context"
-	"log"
 	"net/http"
 	"time"
 )
-
-// Middleware - just stupid middlware: TODO remove
-func Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Middleware start")
-
-		// Call the next handler
-		next.ServeHTTP(w, r)
-
-		log.Println("Middleware end")
-	})
-}
 
 // LoggingMiddleware wraps an http.Handler and logs requests
 func (m *API) LoggingMiddleware(next http.Handler) http.Handler {
@@ -32,7 +18,7 @@ func (m *API) LoggingMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(lrw, r)
 
 		// Log the request details
-		m.log.Info(context.Background(), "request details",
+		m.log.Info(r.Context(), "request details",
 			"method", r.Method,
 			"path", r.URL.Path,
 			"status", lrw.statusCode,
