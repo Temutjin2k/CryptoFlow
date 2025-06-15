@@ -8,6 +8,7 @@
 *.dll
 *.so
 *.dylib
+marketflow
 
 # Test binary, built with `go test -c`
 *.test
@@ -21,6 +22,9 @@
 # Go workspace file
 go.work
 
-# Debug
+# Vscode
 .vscode
+
+# Docker
+/data/
 

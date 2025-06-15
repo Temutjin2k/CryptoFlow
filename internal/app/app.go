@@ -8,7 +8,6 @@ import (
 
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,7 +19,7 @@ type App struct {
 	httpServer *httpserver.API
 	postgresDB *postgres.PostgreDB
 
-	log *slog.Logger
+	log logger.Logger
 }
 
 func NewApplication(ctx context.Context, config config.Config, logger logger.Logger) (*App, error) {
@@ -36,7 +35,7 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 		httpServer: httpServer,
 		postgresDB: db,
 
-		log: config.Logger,
+		log: logger,
 	}
 	return app, nil
 }
@@ -49,7 +48,7 @@ func (app *App) Close(ctx context.Context) {
 	// Closing http server
 	err := app.httpServer.Stop()
 	if err != nil {
-		app.log.Info("failed to shutdown HTTP service", "Err", err.Error())
+		app.log.Info(ctx, "failed to shutdown HTTP service", "Err", err.Error())
 	}
 
 }
@@ -61,7 +60,7 @@ func (app *App) Run() error {
 	// Running http server
 	app.httpServer.Run(errCh)
 
-	app.log.Info("service started", "name", serviceName)
+	app.log.Info(ctx, "application started", "name", serviceName)
 
 	// Waiting signal
 	shutdownCh := make(chan os.Signal, 1)
@@ -71,10 +70,10 @@ func (app *App) Run() error {
 	case errRun := <-errCh:
 		return errRun
 	case s := <-shutdownCh:
-		app.log.Info("Shuting down gracefully", "signal", s)
+		app.log.Info(ctx, "shuting down application", "signal", s.String())
 
 		app.Close(ctx)
-		app.log.Info("graceful shutdown completed!")
+		app.log.Info(ctx, "graceful shutdown completed!")
 	}
 
 	return nil

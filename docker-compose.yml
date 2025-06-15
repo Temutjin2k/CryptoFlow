@@ -12,7 +12,6 @@ services:
 
   postgresql:
     image: docker.io/postgres:16.3
-    container_name: postgresql-uf
     hostname: postgresql
     ports:
       - 5432:5432
@@ -33,7 +32,6 @@ services:
 
   redis:
     image: redis:7.2-alpine
-    container_name: contracts_redis
     command: redis-server /usr/local/etc/redis/redis.conf
     ports:
       - "6379:6379"

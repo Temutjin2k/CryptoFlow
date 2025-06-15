@@ -68,7 +68,7 @@ func (a *API) Stop() error {
 	if err := a.server.Shutdown(ctx); err != nil {
 		return fmt.Errorf("error shutting down server: %w", err)
 	}
-	a.log.Info(ctx, "HTTP server shut down gracefully", "Address", a.addr)
+
 	return nil
 }
 

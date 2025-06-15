@@ -13,10 +13,9 @@ type PostgreDB struct {
 }
 
 type Config struct {
-	Dsn          string `env:"POSTGRES_DSN,required"`
-	MaxOpenConns int32  `env:"POSTGRES_MAX_OPEN_CONN" envDefault:"25"`
-	MaxIdleConns int    `env:"POSTGRES_MAX_IDLE_CONN" envDefault:"25"`
-	MaxIdleTime  string `env:"POSTGRES_MAX_IDLE_TIME" envDefault:"15m"`
+	Dsn          string `env:"POSTGRES_DSN"`
+	MaxOpenConns int32  `env:"POSTGRES_MAX_OPEN_CONN" default:"25"`
+	MaxIdleTime  string `env:"POSTGRES_MAX_IDLE_TIME" default:"15m"`
 }
 
 func New(ctx context.Context, config Config) (*PostgreDB, error) {
@@ -25,6 +24,7 @@ func New(ctx context.Context, config Config) (*PostgreDB, error) {
 		return nil, err
 	}
 
+	// Setting maxOpenConns
 	dbConfig.MaxConns = config.MaxOpenConns
 
 	// Use the time.ParseDuration() function to convert the idle timeout duration string
@@ -34,6 +34,7 @@ func New(ctx context.Context, config Config) (*PostgreDB, error) {
 		return nil, err
 	}
 
+	// Setting MaxConnIdleTime
 	dbConfig.MaxConnIdleTime = duration
 
 	pool, err := pgxpool.NewWithConfig(ctx, dbConfig)
@@ -41,6 +42,7 @@ func New(ctx context.Context, config Config) (*PostgreDB, error) {
 		return nil, err
 	}
 
+	// Ping the database
 	if err = pool.Ping(ctx); err != nil {
 		return nil, err
 	}

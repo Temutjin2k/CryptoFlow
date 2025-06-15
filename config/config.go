@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log/slog"
 	"marketflow/pkg/envcfg"
 	"marketflow/pkg/postgres"
 )
@@ -11,8 +10,6 @@ type (
 	Config struct {
 		Server   Server
 		Postgres postgres.Config
-
-		Logger *slog.Logger
 	}
 
 	// Servers config
@@ -30,6 +27,10 @@ func New() (Config, error) {
 	var config Config
 
 	err := envcfg.Parse(&config)
+
+	if config.Postgres.Dsn == "" {
+		config.Postgres.Dsn = "postgres://user:admin@localhost:5432/marketflow?sslmode=disable"
+	}
 
 	return config, err
 }
