@@ -1,8 +1,8 @@
-# Makefile для инициализации проекта "Tyndau"
+include exchange.mk
 
-.PHONY: init
+.PHONY: run build
 
-# run the project
+# Golang
 run:
 	go run ./cmd/main.go
 
