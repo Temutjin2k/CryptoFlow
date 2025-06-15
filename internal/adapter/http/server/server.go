@@ -26,16 +26,19 @@ type API struct {
 }
 
 type handlers struct {
-	someHandler handler.SomeHandler
+	market handler.Market
+	mode   handler.DataMode
 }
 
 func New(cfg config.Config, logger logger.Logger) *API {
 	addr := fmt.Sprintf(serverIPAddress, cfg.Server.HTTPServer.Port)
 
-	someHandler := handler.NewSomeHandler()
+	marketHandler := handler.NewMarket(logger)
+	dataModeHandler := handler.NewDataMode(logger)
 
 	handlers := &handlers{
-		someHandler: *someHandler,
+		market: *marketHandler,
+		mode:   *dataModeHandler,
 	}
 
 	// Setup routes
