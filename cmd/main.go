@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"marketflow/pkg/logger"
 )
 
-func main() {
+func Run() {
 	ctx := context.Background()
 
 	// Init logger

@@ -9,9 +9,26 @@ volumes:
     name: contracts_redis_data
 
 services: 
+  marketflow:
+    container_name: marketflow
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080" 
+    environment:
+      - HTTP_PORT=8080
+      - POSTGRES_DSN=postgres://user:admin@postgresql:5432/marketflow?sslmode=disable
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - market-net
 
   postgresql:
-    image: docker.io/postgres:16.3
+    image: postgres:16.3
     hostname: postgresql
     ports:
       - 5432:5432
@@ -25,7 +42,7 @@ services:
       POSTGRES_DB: marketflow
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U user -d marketflow" ]
+      test: ["CMD-SHELL", "pg_isready -U user -d marketflow"]
       interval: 10s
       timeout: 5s
       retries: 5

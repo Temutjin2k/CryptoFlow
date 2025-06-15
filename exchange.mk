@@ -1,4 +1,4 @@
-.PHONY: exchange-load-all exchange-run-all exchange-stop-all exchange-rm-all exchange-logs-all
+.PHONY: exchange-load-all exchange-run-all exchange-stop-all
 
 exchange-load-all:
 	docker load -i exchanges/exchange1_amd64.tar

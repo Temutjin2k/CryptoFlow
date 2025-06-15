@@ -1,11 +1,20 @@
-FROM golang:1.24
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
+COPY go.mod go.sum ./
+
+RUN go mod download
+
 COPY . .
 
-RUN go build -o main cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o marketflow .
 
-EXPOSE 8080
+# Final stage
+FROM alpine:latest
 
-CMD ["./cmd/main.go"]
+WORKDIR /root/
+
+COPY --from=builder /app/marketflow .
+
+CMD ["./marketflow"]
