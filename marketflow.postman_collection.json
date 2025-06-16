@@ -1,0 +1,398 @@
+{
+	"info": {
+		"_postman_id": "18a8ffeb-b5a7-434d-b523-428cd3dffd2a",
+		"name": "marketflow",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39112446"
+	},
+	"item": [
+		{
+			"name": "Data Mode API",
+			"item": [
+				{
+					"name": "test mode",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/mode/test",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"mode",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "live mode",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/mode/live",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"mode",
+								"live"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "System Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/health",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Market Data API",
+			"item": [
+				{
+					"name": "latest",
+					"item": [
+						{
+							"name": "Get the latest price for a given symbol.",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/latest/{symbol}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"latest",
+										"{symbol}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get the latest price for a given symbol from a specific exchange.",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/latest/{exchange}/{symbol}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"latest",
+										"{exchange}",
+										"{symbol}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "highest",
+					"item": [
+						{
+							"name": "Get the highest price over a period.",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/highest/{symbol}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"highest",
+										"{symbol}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get the highest price over a period from a specific exchange.",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/highest/{exchange}/{symbol}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"highest",
+										"{exchange}",
+										"{symbol}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get the highest price within the last {duration}(1s,3m and etc)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/highest/{symbol}?period={duration}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"highest",
+										"{symbol}"
+									],
+									"query": [
+										{
+											"key": "period",
+											"value": "{duration}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get the highest price within the last {duration} from a specific exchange.",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/highest/{exchange}/{symbol}?period={duration}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"highest",
+										"{exchange}",
+										"{symbol}"
+									],
+									"query": [
+										{
+											"key": "period",
+											"value": "{duration}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "lowest",
+					"item": [
+						{
+							"name": "Get the lowest price over a period.",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/lowest/{symbol}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"lowest",
+										"{symbol}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get the lowest price over a period from a specific exchange.",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/lowest/{exchange}/{symbol}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"lowest",
+										"{exchange}",
+										"{symbol}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get the lowest price within the last {duration}.",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/lowest/{symbol}?period={duration}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"lowest",
+										"{symbol}"
+									],
+									"query": [
+										{
+											"key": "period",
+											"value": "{duration}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get the lowest price within the last {duration} from a specific exchange.",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/lowest/{exchange}/{symbol}?period={duration}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"lowest",
+										"{exchange}",
+										"{symbol}"
+									],
+									"query": [
+										{
+											"key": "period",
+											"value": "{duration}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "average",
+					"item": [
+						{
+							"name": "Get the average price over a period.",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/average/{symbol}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"average",
+										"{symbol}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get the average price within the last {duration} from a specific exchange",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/average/{exchange}/{symbol}?period={duration}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"average",
+										"{exchange}",
+										"{symbol}"
+									],
+									"query": [
+										{
+											"key": "period",
+											"value": "{duration}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get the average price over a period from a specific exchange.",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8080/prices/average/{exchange}/{symbol}",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"prices",
+										"average",
+										"{exchange}",
+										"{symbol}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	]
+}
