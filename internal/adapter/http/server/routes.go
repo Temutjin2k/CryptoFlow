@@ -11,31 +11,35 @@ func (a *API) setupRoutes() {
 	a.router.HandleFunc("/health", a.HealthCheck)
 
 	// Market Data API
-
-	//latest
+	// Latest
 	a.router.HandleFunc("/prices/latest/{symbol}", a.routes.market.LatestPrice)
 	a.router.HandleFunc("/prices/latest/{exchange}/{symbol}", a.routes.market.LatestPriceByExchange)
 
-	//highest
+	// Highest
 	a.router.HandleFunc("/prices/highest/{symbol}", a.routes.market.HighestPrice)
 	a.router.HandleFunc("/prices/highest/{exchange}/{symbol}", a.routes.market.HighestPriceByExchange)
-	a.router.HandleFunc("/prices/highest/{symbol}?period={duration}", a.routes.market.HighestPriceDuration)
-	a.router.HandleFunc("/prices/highest/{exchange}/{symbol}?period={duration}", a.routes.market.HighestPriceDurationByExchange)
 
-	//lowest
+	// Lowest
 	a.router.HandleFunc("/prices/lowest/{symbol}", a.routes.market.LowestPrice)
 	a.router.HandleFunc("/prices/lowest/{exchange}/{symbol}", a.routes.market.LowestPriceByExchange)
-	a.router.HandleFunc("/prices/lowest/{symbol}?period={duration}", a.routes.market.LowestPriceDuration)
-	a.router.HandleFunc("/prices/lowest/{exchange}/{symbol}?period={duration}", a.routes.market.LowestPriceDurationByExchange)
 
-	//average
+	// Average
 	a.router.HandleFunc("/prices/average/{symbol}", a.routes.market.AveragePrice)
 	a.router.HandleFunc("/prices/average/{exchange}/{symbol}", a.routes.market.AveragePriceByExchange)
-	a.router.HandleFunc("/prices/average/{exchange}/{symbol}?period={duration}", a.routes.market.AveragePriceDurationByExchange)
 
-	// Data Mode API
-	a.router.HandleFunc("POST /mode/test", a.routes.mode.TestMode) // Switch to Test Mode (use generated data).
-	a.router.HandleFunc("POST /mode/live", a.routes.mode.LiveMode) // Switch to Live Mode (fetch data from provided programs).
+	// With duration
+	//highest
+	a.router.HandleFunc("/prices/highest/{symbol}", a.routes.market.HighestPriceDuration)
+	a.router.HandleFunc("/prices/highest/{exchange}/{symbol}", a.routes.market.HighestPriceDurationByExchange)
+	//lowest
+	a.router.HandleFunc("/prices/lowest/{symbol}", a.routes.market.LowestPriceDuration)
+	a.router.HandleFunc("/prices/lowest/{exchange}/{symbol}", a.routes.market.LowestPriceDurationByExchange)
+	//average
+	a.router.HandleFunc("/prices/average/{exchange}/{symbol}", a.routes.market.AveragePriceDurationByExchange)
+
+	// Data Mode
+	a.router.HandleFunc("/mode/test", a.routes.mode.TestMode)
+	a.router.HandleFunc("/mode/live", a.routes.mode.LiveMode)
 }
 
 // HealthCheck - returns system information.
