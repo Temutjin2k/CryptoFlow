@@ -27,16 +27,6 @@ func (a *API) setupRoutes() {
 	a.router.HandleFunc("/prices/average/{symbol}", a.routes.market.AveragePrice)
 	a.router.HandleFunc("/prices/average/{exchange}/{symbol}", a.routes.market.AveragePriceByExchange)
 
-	// With duration
-	//highest
-	a.router.HandleFunc("/prices/highest/{symbol}", a.routes.market.HighestPriceDuration)
-	a.router.HandleFunc("/prices/highest/{exchange}/{symbol}", a.routes.market.HighestPriceDurationByExchange)
-	//lowest
-	a.router.HandleFunc("/prices/lowest/{symbol}", a.routes.market.LowestPriceDuration)
-	a.router.HandleFunc("/prices/lowest/{exchange}/{symbol}", a.routes.market.LowestPriceDurationByExchange)
-	//average
-	a.router.HandleFunc("/prices/average/{exchange}/{symbol}", a.routes.market.AveragePriceDurationByExchange)
-
 	// Data Mode
 	a.router.HandleFunc("/mode/test", a.routes.mode.TestMode)
 	a.router.HandleFunc("/mode/live", a.routes.mode.LiveMode)

@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"marketflow/internal/adapter/http/service"
+	model "marketflow/internal/domain"
 	"marketflow/pkg/logger"
 	"net/http"
 	"strings"
@@ -21,8 +22,8 @@ func NewMarket(log logger.Logger) *Market {
 
 // LATEST
 
-// GET localhost:8080/prices/latest/{symbol}
-func (h *Market) LatestPrice(w http.ResponseWriter, r *http.Request) { //latest price over a period
+// LatestPrice returns latest price among all exchanges
+func (h *Market) LatestPrice(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	pathParts := strings.Split(r.URL.Path, "/")
 
@@ -45,8 +46,8 @@ func (h *Market) LatestPrice(w http.ResponseWriter, r *http.Request) { //latest 
 	json.NewEncoder(w).Encode(result)
 }
 
-// GET localhost:8080/prices/latest/{exchange}/{symbol}
-func (h *Market) LatestPriceByExchange(w http.ResponseWriter, r *http.Request) { //latest price over a period by exchange
+// LatestPriceByExchange returns latest price for a specific exchange
+func (h *Market) LatestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
@@ -70,8 +71,8 @@ func (h *Market) LatestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 
 // HIGHEST
 
-// GET localhost:8080/prices/highest/{symbol}
-func (h *Market) HighestPrice(w http.ResponseWriter, r *http.Request) { //highest price over a period
+// HighestPrice returns highest price among all exchanges
+func (h *Market) HighestPrice(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 4 {
@@ -82,13 +83,15 @@ func (h *Market) HighestPrice(w http.ResponseWriter, r *http.Request) { //highes
 
 	symbol := pathParts[3]
 	period := r.URL.Query().Get("period")
+	var result model.PriceData
+	var err error
 
-	if period != "" {
-		h.HighestPriceDuration(w, r)
-		return
+	if period == "" {
+		result, err = h.service.GetHighestPrice(symbol)
+	} else {
+		result, err = h.service.GetHighestPriceDuration(symbol, period)
 	}
 
-	result, err := h.service.GetHighestPrice(symbol)
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -99,8 +102,8 @@ func (h *Market) HighestPrice(w http.ResponseWriter, r *http.Request) { //highes
 	json.NewEncoder(w).Encode(result)
 }
 
-// GET localhost:8080/prices/highest/{exchange}/{symbol}
-func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) { //highest price over a period by exchange
+// HighestPriceByExchange returns highest price for a sprcific exchange
+func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
@@ -113,59 +116,15 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 	symbol := pathParts[4]
 	period := r.URL.Query().Get("period")
 
-	if period != "" {
-		h.HighestPriceDurationByExchange(w, r)
-		return
+	var result model.PriceData
+	var err error
+
+	if period == "" {
+		result, err = h.service.GetHighestPriceByExchange(exchange, symbol)
+	} else {
+		result, err = h.service.GetHighestPriceDurationByExchange(exchange, symbol, period)
 	}
 
-	result, err := h.service.GetHighestPriceByExchange(exchange, symbol)
-	if err != nil {
-		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
-}
-
-// GET localhost:8080/prices/highest/{symbol}?period={duration}
-func (h *Market) HighestPriceDuration(w http.ResponseWriter, r *http.Request) { //highest price within a duration
-	ctx := r.Context()
-	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 4 {
-		h.log.Error(ctx, "Invalid URL", "status", http.StatusBadRequest)
-		http.Error(w, "Invalid URL", http.StatusBadRequest)
-		return
-	}
-
-	symbol := pathParts[3]
-	period := r.URL.Query().Get("period")
-	result, err := h.service.GetHighestPriceDuration(symbol, period)
-	if err != nil {
-		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
-}
-
-// GET localhost:8080/prices/highest/{exchange}/{symbol}?period={duration}
-func (h *Market) HighestPriceDurationByExchange(w http.ResponseWriter, r *http.Request) { //highest price within a duration by exchange
-	ctx := r.Context()
-	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 5 {
-		h.log.Error(ctx, "Invalid URL", "status", http.StatusBadRequest)
-		http.Error(w, "Invalid URL", http.StatusBadRequest)
-		return
-	}
-
-	exchange := pathParts[3]
-	symbol := pathParts[4]
-	period := r.URL.Query().Get("period")
-	result, err := h.service.GetHighestPriceDurationByExchange(exchange, symbol, period)
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -178,7 +137,7 @@ func (h *Market) HighestPriceDurationByExchange(w http.ResponseWriter, r *http.R
 
 // LOWEST
 
-// GET localhost:8080/prices/lowest/{symbol}
+// LowestPrice returns lowest price among all exchanges
 func (h *Market) LowestPrice(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	pathParts := strings.Split(r.URL.Path, "/")
@@ -191,12 +150,15 @@ func (h *Market) LowestPrice(w http.ResponseWriter, r *http.Request) {
 	symbol := pathParts[3]
 	period := r.URL.Query().Get("period")
 
-	if period != "" {
-		h.LowestPriceDuration(w, r)
-		return
+	var result model.PriceData
+	var err error
+
+	if period == "" {
+		result, err = h.service.GetLowestPrice(symbol)
+	} else {
+		result, err = h.service.GetLowestPriceDuration(symbol, period)
 	}
 
-	result, err := h.service.GetLowestPrice(symbol)
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -207,8 +169,8 @@ func (h *Market) LowestPrice(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
-// GET localhost:8080/prices/lowest/{exchange}/{symbol}
-func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) { //lowest price by exchange
+// LowestPriceByExchange returns lowest price for a specific exchange
+func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
@@ -221,59 +183,15 @@ func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 	symbol := pathParts[4]
 	period := r.URL.Query().Get("period")
 
-	if period != "" {
-		h.LowestPriceDurationByExchange(w, r)
-		return
+	var result model.PriceData
+	var err error
+
+	if period == "" {
+		result, err = h.service.GetLowestPriceByExchange(exchange, symbol)
+	} else {
+		result, err = h.service.GetLowestPriceDurationByExchange(exchange, symbol, period)
 	}
 
-	result, err := h.service.GetLowestPriceByExchange(exchange, symbol)
-	if err != nil {
-		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
-}
-
-// GET localhost:8080/prices/lowest/{symbol}?period={duration}
-func (h *Market) LowestPriceDuration(w http.ResponseWriter, r *http.Request) { //lowest price within a duration
-	ctx := r.Context()
-	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 4 {
-		h.log.Error(ctx, "Invalid URL", "status", http.StatusBadRequest)
-		http.Error(w, "Invalid URL", http.StatusBadRequest)
-		return
-	}
-
-	symbol := pathParts[3]
-	period := r.URL.Query().Get("period")
-	result, err := h.service.GetLowestPriceDuration(symbol, period)
-	if err != nil {
-		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
-}
-
-// GET localhost:8080/prices/lowest/{exchange}/{symbol}?period={duration}
-func (h *Market) LowestPriceDurationByExchange(w http.ResponseWriter, r *http.Request) { //lowest price within a duration by exchange
-	ctx := r.Context()
-	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 5 {
-		h.log.Error(ctx, "Invalid URL", "status", http.StatusBadRequest)
-		http.Error(w, "Invalid URL", http.StatusBadRequest)
-		return
-	}
-
-	exchange := pathParts[3]
-	symbol := pathParts[4]
-	period := r.URL.Query().Get("period")
-	result, err := h.service.GetLowestPriceDurationByExchange(exchange, symbol, period)
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -286,8 +204,8 @@ func (h *Market) LowestPriceDurationByExchange(w http.ResponseWriter, r *http.Re
 
 // AVERAGE
 
-// GET localhost:8080/prices/average/{symbol}
-func (h *Market) AveragePrice(w http.ResponseWriter, r *http.Request) { //average price over a period
+// AveragePrice returns avg price among all exchanages
+func (h *Market) AveragePrice(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 4 {
@@ -308,8 +226,8 @@ func (h *Market) AveragePrice(w http.ResponseWriter, r *http.Request) { //averag
 	json.NewEncoder(w).Encode(result)
 }
 
-// GET localhost:8080/prices/average/{exchange}/{symbol}?period={duration}
-func (h *Market) AveragePriceDurationByExchange(w http.ResponseWriter, r *http.Request) { //average price within a duration by exchange
+// AveragePriceByExchange returns avg price for a specific exchange
+func (h *Market) AveragePriceByExchange(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
@@ -321,30 +239,15 @@ func (h *Market) AveragePriceDurationByExchange(w http.ResponseWriter, r *http.R
 	exchange := pathParts[3]
 	symbol := pathParts[4]
 	period := r.URL.Query().Get("period")
-	result, err := h.service.GetAveragePriceDurationByExchange(exchange, symbol, period)
-	if err != nil {
-		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
+	var result model.PriceData
+	var err error
+
+	if period == "" {
+		result, err = h.service.GetAveragePriceByExchange(exchange, symbol)
+	} else {
+		result, err = h.service.GetAveragePriceDurationByExchange(exchange, symbol, period)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
-}
-
-// GET localhost:8080/prices/average/{exchange}/{symbol}
-func (h *Market) AveragePriceByExchange(w http.ResponseWriter, r *http.Request) { //average price by exchange
-	ctx := r.Context()
-	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 5 {
-		h.log.Error(ctx, "Invalid URL", "status", http.StatusBadRequest)
-		http.Error(w, "Invalid URL", http.StatusBadRequest)
-		return
-	}
-
-	exchange := pathParts[3]
-	symbol := pathParts[4]
-	result, err := h.service.GetAveragePriceByExchange(exchange, symbol)
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
