@@ -11,21 +11,25 @@ func (a *API) setupRoutes() {
 	a.router.HandleFunc("/health", a.HealthCheck)
 
 	// Market Data API
+	// Latest
 	a.router.HandleFunc("/prices/latest/{symbol}", a.routes.market.LatestPrice)
 	a.router.HandleFunc("/prices/latest/{exchange}/{symbol}", a.routes.market.LatestPriceByExchange)
 
+	// Highest
 	a.router.HandleFunc("/prices/highest/{symbol}", a.routes.market.HighestPrice)
 	a.router.HandleFunc("/prices/highest/{exchange}/{symbol}", a.routes.market.HighestPriceByExchange)
 
+	// Lowest
 	a.router.HandleFunc("/prices/lowest/{symbol}", a.routes.market.LowestPrice)
 	a.router.HandleFunc("/prices/lowest/{exchange}/{symbol}", a.routes.market.LowestPriceByExchange)
 
+	// Average
 	a.router.HandleFunc("/prices/average/{symbol}", a.routes.market.AveragePrice)
 	a.router.HandleFunc("/prices/average/{exchange}/{symbol}", a.routes.market.AveragePriceByExchange)
 
-	// Data Mode API
-	a.router.HandleFunc("POST /mode/test", a.routes.mode.TestMode) // Switch to Test Mode (use generated data).
-	a.router.HandleFunc("POST /mode/live", a.routes.mode.LiveMode) // Switch to Live Mode (fetch data from provided programs).
+	// Data Mode
+	a.router.HandleFunc("/mode/test", a.routes.mode.TestMode)
+	a.router.HandleFunc("/mode/live", a.routes.mode.LiveMode)
 }
 
 // HealthCheck - returns system information.
