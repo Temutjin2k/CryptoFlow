@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"marketflow/pkg/envcfg"
+	"marketflow/pkg/loadenv"
 	"marketflow/pkg/postgres"
 )
 
@@ -26,11 +28,13 @@ type (
 func New() (Config, error) {
 	var config Config
 
-	err := envcfg.Parse(&config)
-
-	if config.Postgres.Dsn == "" {
-		config.Postgres.Dsn = "postgres://user:admin@localhost:5432/marketflow?sslmode=disable"
+	// Custom func that loads enviromental variables
+	if err := loadenv.LoadEnvFile(".env"); err != nil {
+		return Config{}, fmt.Errorf("failed to parse config file: %w", err)
 	}
+
+	// Parsing enviromental variables to the struct
+	err := envcfg.Parse(&config)
 
 	return config, err
 }

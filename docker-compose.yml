@@ -15,10 +15,9 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080" 
-    environment:
-      - HTTP_PORT=8080
-      - POSTGRES_DSN=postgres://user:admin@postgresql:5433/marketflow?sslmode=disable
+      - "8080:8080"
+    env_file: # Указывает из какого файла будут читатся переменные
+      - .env   
     depends_on:
       postgresql:
         condition: service_healthy
