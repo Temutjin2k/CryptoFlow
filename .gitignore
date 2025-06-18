@@ -28,3 +28,5 @@ go.work
 # Docker
 /data/
 
+# Enviroment variables
+.env
