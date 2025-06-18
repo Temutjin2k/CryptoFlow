@@ -2,8 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
+	"marketflow/pkg/validator"
 	"net/http"
 	"time"
 )
@@ -26,6 +28,12 @@ func (h *Market) LatestPrice(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	symbol := r.PathValue("symbol")
+	v := validator.New()
+	if validateSymbol(v, symbol); !v.Valid() {
+		errorResponse(w, r, http.StatusUnprocessableEntity, v.Errors)
+		return
+	}
+
 	result, err := h.service.GetLatest("", symbol)
 
 	if err != nil {
@@ -211,4 +219,12 @@ func (h *Market) AveragePriceByExchange(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
+}
+
+func validateSymbol(v *validator.Validator, symbol string) {
+	v.Check(symbol != "", "symbol", "must be provided")
+
+	validSymbols := []string{"BTCUSDT", "DOGEUSDT", "TONUSDT", "SOLUSDT", "ETHUSDT"}
+
+	v.Check(validator.PermittedValue(symbol, validSymbols...), "symbol", fmt.Sprintf("invalid symbol. Available symbols %v", validSymbols))
 }
