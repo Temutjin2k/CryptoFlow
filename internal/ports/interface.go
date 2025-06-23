@@ -21,11 +21,15 @@ type MarketRepository interface {
 	GetByPeriod(ctx context.Context, exchange, pair string, period time.Duration) ([]domain.PriceStats, error)
 }
 
-// // http
-// type ExchangeClient interface {
-// 	Start(ctx context.Context, out chan<- PriceUpdate) error
-// 	Stop() error
-// }
+// ExchangeClient is an interface for Data sources
+type ExchangeClient interface {
+	Start(ctx context.Context) (<-chan domain.PriceData, error)
+	Stop() error
+}
+
+type Collector interface {
+	Start(processedPrices <-chan domain.PriceData)
+}
 
 // Service
 type Market interface {

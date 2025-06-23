@@ -24,7 +24,6 @@ func (m *API) LoggingMiddleware(next http.Handler) http.Handler {
 			"status", lrw.statusCode,
 			"duration", time.Since(start),
 			"remote_ip", r.RemoteAddr,
-			"user_agent", r.UserAgent(),
 		)
 	})
 }

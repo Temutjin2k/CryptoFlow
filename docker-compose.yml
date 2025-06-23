@@ -30,7 +30,7 @@ services:
     image: postgres:16.3
     hostname: postgresql
     ports:
-      - 5433:5433
+      - 5432:5432
     networks:
       - market-net
     volumes:
@@ -65,3 +65,20 @@ services:
       timeout: 5s
       retries: 3
 
+  exchange1:
+    image: exchange1:latest
+    container_name: ${EXCHANGE1_NAME}
+    ports:
+      - "${EXCHANGE1_PORT}:${EXCHANGE1_PORT}"
+
+  exchange2:
+    image: exchange2:latest
+    container_name: ${EXCHANGE2_NAME}
+    ports:
+      - "${EXCHANGE2_PORT}:${EXCHANGE2_PORT}"
+
+  exchange3:
+    image: exchange3:latest
+    container_name: ${EXCHANGE3_NAME}
+    ports:
+      - "${EXCHANGE3_PORT}:${EXCHANGE3_PORT}"
