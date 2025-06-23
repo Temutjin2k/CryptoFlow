@@ -17,4 +17,6 @@ WORKDIR /root/
 
 COPY --from=builder /app/marketflow .
 
+COPY .env .env
+
 CMD ["./marketflow"]

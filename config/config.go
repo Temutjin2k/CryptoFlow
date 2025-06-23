@@ -30,11 +30,13 @@ func New() (Config, error) {
 
 	// Custom func that loads enviromental variables
 	if err := loadenv.LoadEnvFile(".env"); err != nil {
-		return Config{}, fmt.Errorf("failed to parse config file: %w", err)
+		return Config{}, fmt.Errorf("failed to load enviromental variables: %w", err)
 	}
 
 	// Parsing enviromental variables to the struct
-	err := envcfg.Parse(&config)
+	if err := envcfg.Parse(&config); err != nil {
+		return Config{}, fmt.Errorf("failed to parse config file: %w", err)
+	}
 
-	return config, err
+	return config, nil
 }

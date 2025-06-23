@@ -16,7 +16,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-    env_file: # Указывает из какого файла будут читатся переменные
+    env_file:
       - .env   
     depends_on:
       postgresql:
@@ -55,7 +55,7 @@ services:
       - ./data/redis:/data
       - ./local/redis/redis.conf:/usr/local/etc/redis/redis.conf
     environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-strongpassword}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-strongpassword}
     restart: unless-stopped
     networks:
       - market-net

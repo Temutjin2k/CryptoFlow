@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "18a8ffeb-b5a7-434d-b523-428cd3dffd2a",
+		"_postman_id": "946d0311-71a1-4077-be75-4bdbad7f9013",
 		"name": "marketflow",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "39112446"
+		"_exporter_id": "38774679"
 	},
 	"item": [
 		{
@@ -79,12 +79,12 @@
 					"name": "latest",
 					"item": [
 						{
-							"name": "Get the latest price for a given symbol.",
+							"name": "Latest",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "localhost:8080/prices/latest/{symbol}",
+									"raw": "localhost:8080/prices/latest/{{symbol}}",
 									"host": [
 										"localhost"
 									],
@@ -92,19 +92,19 @@
 									"path": [
 										"prices",
 										"latest",
-										"{symbol}"
+										"{{symbol}}"
 									]
 								}
 							},
 							"response": []
 						},
 						{
-							"name": "Get the latest price for a given symbol from a specific exchange.",
+							"name": "Latest by exchange",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "localhost:8080/prices/latest/{exchange}/{symbol}",
+									"raw": "localhost:8080/prices/latest/{{exchange}}/{{symbol}}",
 									"host": [
 										"localhost"
 									],
@@ -112,8 +112,8 @@
 									"path": [
 										"prices",
 										"latest",
-										"{exchange}",
-										"{symbol}"
+										"{{exchange}}",
+										"{{symbol}}"
 									]
 								}
 							},
@@ -125,12 +125,12 @@
 					"name": "highest",
 					"item": [
 						{
-							"name": "Get the highest price over a period.",
+							"name": "Highest",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "localhost:8080/prices/highest/{symbol}",
+									"raw": "localhost:8080/prices/highest/{{symbol}}?period={{duration}}",
 									"host": [
 										"localhost"
 									],
@@ -138,53 +138,12 @@
 									"path": [
 										"prices",
 										"highest",
-										"{symbol}"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get the highest price over a period from a specific exchange.",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "localhost:8080/prices/highest/{exchange}/{symbol}",
-									"host": [
-										"localhost"
-									],
-									"port": "8080",
-									"path": [
-										"prices",
-										"highest",
-										"{exchange}",
-										"{symbol}"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get the highest price within the last {duration}(1s,3m and etc)",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "localhost:8080/prices/highest/{symbol}?period={duration}",
-									"host": [
-										"localhost"
-									],
-									"port": "8080",
-									"path": [
-										"prices",
-										"highest",
-										"{symbol}"
+										"{{symbol}}"
 									],
 									"query": [
 										{
 											"key": "period",
-											"value": "{duration}"
+											"value": "{{duration}}"
 										}
 									]
 								}
@@ -192,12 +151,12 @@
 							"response": []
 						},
 						{
-							"name": "Get the highest price within the last {duration} from a specific exchange.",
+							"name": "Highest by exchange",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "localhost:8080/prices/highest/{exchange}/{symbol}?period={duration}",
+									"raw": "localhost:8080/prices/highest/{{exchange}}/{{symbol}}?period={{duration}}",
 									"host": [
 										"localhost"
 									],
@@ -205,13 +164,13 @@
 									"path": [
 										"prices",
 										"highest",
-										"{exchange}",
-										"{symbol}"
+										"{{exchange}}",
+										"{{symbol}}"
 									],
 									"query": [
 										{
 											"key": "period",
-											"value": "{duration}"
+											"value": "{{duration}}"
 										}
 									]
 								}
@@ -224,12 +183,12 @@
 					"name": "lowest",
 					"item": [
 						{
-							"name": "Get the lowest price over a period.",
+							"name": "Lowest",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "localhost:8080/prices/lowest/{symbol}",
+									"raw": "localhost:8080/prices/lowest/{{symbol}}?period={{duration}}",
 									"host": [
 										"localhost"
 									],
@@ -237,53 +196,12 @@
 									"path": [
 										"prices",
 										"lowest",
-										"{symbol}"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get the lowest price over a period from a specific exchange.",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "localhost:8080/prices/lowest/{exchange}/{symbol}",
-									"host": [
-										"localhost"
-									],
-									"port": "8080",
-									"path": [
-										"prices",
-										"lowest",
-										"{exchange}",
-										"{symbol}"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get the lowest price within the last {duration}.",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "localhost:8080/prices/lowest/{symbol}?period={duration}",
-									"host": [
-										"localhost"
-									],
-									"port": "8080",
-									"path": [
-										"prices",
-										"lowest",
-										"{symbol}"
+										"{{symbol}}"
 									],
 									"query": [
 										{
 											"key": "period",
-											"value": "{duration}"
+											"value": "{{duration}}"
 										}
 									]
 								}
@@ -291,12 +209,12 @@
 							"response": []
 						},
 						{
-							"name": "Get the lowest price within the last {duration} from a specific exchange.",
+							"name": "Lowest by exchange",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "localhost:8080/prices/lowest/{exchange}/{symbol}?period={duration}",
+									"raw": "localhost:8080/prices/lowest/{{exchange}}/{{symbol}}?period={{duration}}",
 									"host": [
 										"localhost"
 									],
@@ -304,13 +222,13 @@
 									"path": [
 										"prices",
 										"lowest",
-										"{exchange}",
-										"{symbol}"
+										"{{exchange}}",
+										"{{symbol}}"
 									],
 									"query": [
 										{
 											"key": "period",
-											"value": "{duration}"
+											"value": "{{duration}}"
 										}
 									]
 								}
@@ -323,12 +241,12 @@
 					"name": "average",
 					"item": [
 						{
-							"name": "Get the average price over a period.",
+							"name": "Average",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "localhost:8080/prices/average/{symbol}",
+									"raw": "localhost:8080/prices/average/{{symbol}}?period={{duration}}",
 									"host": [
 										"localhost"
 									],
@@ -336,33 +254,12 @@
 									"path": [
 										"prices",
 										"average",
-										"{symbol}"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get the average price within the last {duration} from a specific exchange",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "localhost:8080/prices/average/{exchange}/{symbol}?period={duration}",
-									"host": [
-										"localhost"
-									],
-									"port": "8080",
-									"path": [
-										"prices",
-										"average",
-										"{exchange}",
-										"{symbol}"
+										"{{symbol}}"
 									],
 									"query": [
 										{
 											"key": "period",
-											"value": "{duration}"
+											"value": "{{duration}}"
 										}
 									]
 								}
@@ -370,12 +267,12 @@
 							"response": []
 						},
 						{
-							"name": "Get the average price over a period from a specific exchange.",
+							"name": "Average by exchange",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "localhost:8080/prices/average/{exchange}/{symbol}",
+									"raw": "localhost:8080/prices/average/{{exchange}}/{{symbol}}?period={{duration}}",
 									"host": [
 										"localhost"
 									],
@@ -383,8 +280,14 @@
 									"path": [
 										"prices",
 										"average",
-										"{exchange}",
-										"{symbol}"
+										"{{exchange}}",
+										"{{symbol}}"
+									],
+									"query": [
+										{
+											"key": "period",
+											"value": "{{duration}}"
+										}
 									]
 								}
 							},
@@ -393,6 +296,23 @@
 					]
 				}
 			]
+		}
+	],
+	"variable": [
+		{
+			"key": "symbol",
+			"value": "BTCUSDT",
+			"type": "default"
+		},
+		{
+			"key": "exchange",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "duration",
+			"value": "1m",
+			"type": "default"
 		}
 	]
 }
