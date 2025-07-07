@@ -44,7 +44,7 @@ func (c *Collector) Start(processedPrices <-chan domain.PriceData) {
 			lastPrice = price
 
 			// TODO set price data correctly
-			if err := c.cache.SetLatest(context.Background(), domain.PriceData{}); err != nil {
+			if err := c.cache.SetLatest(context.Background(), domain.PriceData{}, time.Minute); err != nil {
 				log.Error("cache store failed", "error", err)
 			}
 

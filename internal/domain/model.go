@@ -2,14 +2,15 @@ package domain
 
 import (
 	"fmt"
+	"marketflow/internal/domain/types"
 	"time"
 )
 
 type PriceData struct {
-	Symbol    string    `json:"symbol"`
-	Exchange  string    `json:"exchange"`
-	Price     float64   `json:"price"`
-	Timestamp time.Time `json:"timestamp"`
+	Symbol    types.Symbol `json:"symbol"`
+	Exchange  string       `json:"exchange"`
+	Price     float64      `json:"price"`
+	Timestamp time.Time    `json:"timestamp"`
 }
 
 func (p PriceData) String() string {

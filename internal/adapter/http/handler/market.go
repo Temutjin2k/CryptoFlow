@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
 	"marketflow/pkg/validator"
@@ -11,13 +10,16 @@ import (
 )
 
 type Market struct {
-	service ports.Market
-	log     logger.Logger
+	market ports.Market
+	log    logger.Logger
+
+	exchanges []string
 }
 
-func NewMarket(log logger.Logger) *Market {
+func NewMarket(market ports.Market, log logger.Logger) *Market {
 	return &Market{
-		log: log,
+		market: market,
+		log:    log,
 	}
 }
 
@@ -34,7 +36,7 @@ func (h *Market) LatestPrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.service.GetLatest("", symbol)
+	result, err := h.market.GetLatest(ctx, "", symbol)
 
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
@@ -52,7 +54,17 @@ func (h *Market) LatestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 
 	exchange := r.PathValue("exchange")
 	symbol := r.PathValue("symbol")
-	result, err := h.service.GetLatest(exchange, symbol)
+
+	v := validator.New()
+
+	h.validateExchange(v, exchange)
+
+	if validateSymbol(v, symbol); !v.Valid() {
+		errorResponse(w, r, http.StatusUnprocessableEntity, v.Errors)
+		return
+	}
+
+	result, err := h.market.GetLatest(ctx, exchange, symbol)
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -78,7 +90,7 @@ func (h *Market) HighestPrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.service.GetHighest("", symbol, periodParsed)
+	result, err := h.market.GetHighest(ctx, "", symbol, periodParsed)
 
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
@@ -104,7 +116,7 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	result, err := h.service.GetHighest(exchange, symbol, periodParsed)
+	result, err := h.market.GetHighest(ctx, exchange, symbol, periodParsed)
 
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
@@ -131,7 +143,7 @@ func (h *Market) LowestPrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.service.GetLowest("", symbol, periodParsed)
+	result, err := h.market.GetLowest(ctx, "", symbol, periodParsed)
 
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
@@ -157,7 +169,7 @@ func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.service.GetLowest(exchange, symbol, periodParsed)
+	result, err := h.market.GetLowest(ctx, exchange, symbol, periodParsed)
 
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
@@ -184,7 +196,7 @@ func (h *Market) AveragePrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.service.GetAverage("", symbol, periodParsed)
+	result, err := h.market.GetAverage(ctx, "", symbol, periodParsed)
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -209,7 +221,7 @@ func (h *Market) AveragePriceByExchange(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	result, err := h.service.GetAverage(exchange, symbol, periodParsed)
+	result, err := h.market.GetAverage(ctx, exchange, symbol, periodParsed)
 
 	if err != nil {
 		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
@@ -219,12 +231,4 @@ func (h *Market) AveragePriceByExchange(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
-}
-
-func validateSymbol(v *validator.Validator, symbol string) {
-	v.Check(symbol != "", "symbol", "must be provided")
-
-	validSymbols := []string{"BTCUSDT", "DOGEUSDT", "TONUSDT", "SOLUSDT", "ETHUSDT"}
-
-	v.Check(validator.PermittedValue(symbol, validSymbols...), "symbol", fmt.Sprintf("invalid symbol. Available symbols %v", validSymbols))
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"marketflow/config"
 	"marketflow/internal/adapter/http/handler"
+	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
 	"net/http"
 	"time"
@@ -30,10 +31,10 @@ type handlers struct {
 	mode   handler.DataMode
 }
 
-func New(cfg config.Config, logger logger.Logger) *API {
+func New(cfg config.Config, market ports.Market, logger logger.Logger) *API {
 	addr := fmt.Sprintf(serverIPAddress, cfg.Server.HTTPServer.Port)
 
-	marketHandler := handler.NewMarket(logger)
+	marketHandler := handler.NewMarket(market, logger)
 	dataModeHandler := handler.NewDataMode(logger)
 
 	handlers := &handlers{

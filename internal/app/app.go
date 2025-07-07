@@ -2,9 +2,8 @@ package app
 
 import (
 	"marketflow/config"
-	"marketflow/internal/adapter/exchange"
 	httpserver "marketflow/internal/adapter/http/server"
-	"marketflow/internal/ports"
+	"marketflow/internal/adapter/redis"
 	"marketflow/internal/service"
 	"marketflow/pkg/logger"
 	"marketflow/pkg/postgres"
@@ -31,39 +30,52 @@ type App struct {
 }
 
 func NewApplication(ctx context.Context, config config.Config, logger logger.Logger) (*App, error) {
-	// Database
+	const fn = "NewApplication"
+
+	log := logger.GetSlogLogger().With("fn", fn)
+	// Postgres database
 	db, err := postgres.New(ctx, config.Postgres)
 	if err != nil {
+		log.Error("failed to connect postgres", "dsn", config.Postgres.Dsn, "error", err)
 		return nil, fmt.Errorf("failed to connect postgres: %v", err)
 	}
 
-	// Define data sources
-	sources := []ports.ExchangeClient{
-		exchange.NewExchange("exchange1", "localhost:40101", logger),
-		exchange.NewExchange("exchange2", "localhost:40101", logger),
-		exchange.NewExchange("exchange3", "localhost:40101", logger),
+	// Redis client
+	redisClient, err := redis.NewClient(ctx, config.Redis)
+	if err != nil {
+		log.Error("failed to connect postgres", "adress", config.Redis.Addr, "error", err)
+		return nil, fmt.Errorf("failed to connect redis: %v", err)
 	}
+	// // Define data sources
+	// sources := []ports.ExchangeClient{
+	// 	exchange.NewExchange("exchange1", "localhost:40101", logger),
+	// 	exchange.NewExchange("exchange2", "localhost:40101", logger),
+	// 	exchange.NewExchange("exchange3", "localhost:40101", logger),
+	// }
 
 	// DataCollector
-	collector := service.NewCollector(nil, nil, logger)
+	// collector := service.NewCollector(nil, nil, logger)
 
-	// ExchangeManager
-	exchangeManager := service.NewExchangeManager(collector, sources, logger)
+	// // ExchangeManager
+	// exchangeManager := service.NewExchangeManager(collector, sources, logger)
+
+	// Market service
+	market := service.NewMarket(nil, redisClient, logger)
 
 	// REST API server
-	httpServer := httpserver.New(config, logger)
+	httpServer := httpserver.New(config, market, logger)
 
 	app := &App{
 		httpServer:      httpServer,
 		postgresDB:      db,
-		exchangeManager: exchangeManager,
+		exchangeManager: nil,
 
 		log: logger,
 	}
 	return app, nil
 }
 
-func (app *App) Close(ctx context.Context) {
+func (app *App) close(ctx context.Context) {
 	// Closing database connection
 	app.postgresDB.Pool.Close()
 
@@ -72,7 +84,6 @@ func (app *App) Close(ctx context.Context) {
 	if err != nil {
 		app.log.Info(ctx, "failed to shutdown HTTP service", "Err", err.Error())
 	}
-
 }
 
 func (app *App) Run() error {
@@ -80,9 +91,9 @@ func (app *App) Run() error {
 	ctx := context.Background()
 
 	// Running DataManager
-	if err := app.exchangeManager.Start(ctx); err != nil {
-		return err
-	}
+	// if err := app.exchangeManager.Start(ctx); err != nil {
+	// 	return err
+	// }
 
 	// Running http server
 	app.httpServer.Run(errCh)
@@ -99,7 +110,7 @@ func (app *App) Run() error {
 	case s := <-shutdownCh:
 		app.log.Info(ctx, "shuting down application", "signal", s.String())
 
-		app.Close(ctx)
+		app.close(ctx)
 		app.log.Info(ctx, "graceful shutdown completed!")
 	}
 

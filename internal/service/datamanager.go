@@ -25,14 +25,14 @@ func NewExchangeManager(collector ports.Collector, exchange []ports.ExchangeClie
 }
 
 func (e *ExchangeManager) Start(ctx context.Context) error {
-	var allPrices []<-chan domain.PriceData
+	var allExchanges []<-chan domain.PriceData
 	for _, source := range e.exchangeSources {
 		prices, _ := source.Start(ctx)
-		allPrices = append(allPrices, prices)
+		allExchanges = append(allExchanges, prices)
 	}
 
 	var fanOutChannels [][]<-chan domain.PriceData
-	for _, sourceChan := range allPrices {
+	for _, sourceChan := range allExchanges {
 		fanOutChannels = append(fanOutChannels, FanOut(sourceChan, 5)) // 5 workers на источник
 	}
 
@@ -94,7 +94,7 @@ func FanOut(source <-chan domain.PriceData, numWorkers int) []<-chan domain.Pric
 	return outputs
 }
 
-func worker(id int, prices <-chan domain.PriceData, results chan<- domain.PriceData) {
+func worker(prices <-chan domain.PriceData, results chan<- domain.PriceData) {
 	for price := range prices {
 		// Имитация обработки
 		// processed := domain.PriceData{
@@ -118,7 +118,7 @@ func startWorkers(numWorkers int, inputs []<-chan domain.PriceData) <-chan domai
 		wg.Add(1)
 		go func(workerID int, in <-chan domain.PriceData) {
 			defer wg.Done()
-			worker(workerID, in, results)
+			worker(in, results)
 		}(i+1, input)
 	}
 
