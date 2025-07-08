@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"marketflow/internal/domain/types"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
 	"marketflow/pkg/validator"
@@ -12,8 +13,6 @@ import (
 type Market struct {
 	market ports.Market
 	log    logger.Logger
-
-	exchanges []string
 }
 
 func NewMarket(market ports.Market, log logger.Logger) *Market {
@@ -28,24 +27,31 @@ func NewMarket(market ports.Market, log logger.Logger) *Market {
 // LatestPrice returns latest price among all exchanges
 func (h *Market) LatestPrice(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-
 	symbol := r.PathValue("symbol")
+
+	log := h.log.GetSlogLogger().With("symbol", symbol)
+
 	v := validator.New()
 	if validateSymbol(v, symbol); !v.Valid() {
-		errorResponse(w, r, http.StatusUnprocessableEntity, v.Errors)
+		log.Error("failed to validate request", "errors", v.Errors)
+		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
 		return
 	}
 
-	result, err := h.market.GetLatest(ctx, "", symbol)
-
+	// getting latest price data from all exchanges
+	result, err := h.market.GetLatest(ctx, types.AllExchanges, types.Symbol(symbol))
 	if err != nil {
-		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		log.Error("failed to get latest data from all exchanges", "error", err)
+		internalErrorResponse(w, "failed to get latest data from all exchanges")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		log.Error("failed to encode json", "err", err)
+		internalErrorResponse(w, "failed to encode json")
+		return
+	}
 }
 
 // LatestPriceByExchange returns latest price for a specific exchange
@@ -55,24 +61,32 @@ func (h *Market) LatestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 	exchange := r.PathValue("exchange")
 	symbol := r.PathValue("symbol")
 
+	log := h.log.GetSlogLogger().With("symbol", symbol)
+
 	v := validator.New()
 
-	h.validateExchange(v, exchange)
+	validateExchange(v, exchange)
 
 	if validateSymbol(v, symbol); !v.Valid() {
-		errorResponse(w, r, http.StatusUnprocessableEntity, v.Errors)
+		log.Error("failed to validate request", "errors", v.Errors)
+		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
 		return
 	}
 
-	result, err := h.market.GetLatest(ctx, exchange, symbol)
+	// getting latest price data from specific exchange.
+	result, err := h.market.GetLatest(ctx, types.Exchange(exchange), types.Symbol(symbol))
 	if err != nil {
-		h.log.Error(ctx, "Failed to fetch data", "status", http.StatusInternalServerError)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		log.Error("failed to get latest data from specific exchange", "error", err)
+		internalErrorResponse(w, "failed to get latest data from all exchanges")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		log.Error("failed to encode json", "err", err)
+		internalErrorResponse(w, "failed to encode json")
+		return
+	}
 }
 
 // HIGHEST
@@ -99,7 +113,10 @@ func (h *Market) HighestPrice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		internalErrorResponse(w, "failed to encode json")
+		return
+	}
 }
 
 // HighestPriceByExchange returns highest price for a sprcific exchange
@@ -125,7 +142,10 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		internalErrorResponse(w, "failed to encode json")
+		return
+	}
 }
 
 // LOWEST
@@ -152,7 +172,10 @@ func (h *Market) LowestPrice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		internalErrorResponse(w, "failed to encode json")
+		return
+	}
 }
 
 // LowestPriceByExchange returns lowest price for a specific exchange
@@ -178,7 +201,10 @@ func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		internalErrorResponse(w, "failed to encode json")
+		return
+	}
 }
 
 // AVERAGE
@@ -204,7 +230,10 @@ func (h *Market) AveragePrice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		internalErrorResponse(w, "failed to encode json")
+		return
+	}
 }
 
 // AveragePriceByExchange returns avg price for a specific exchange
@@ -230,5 +259,8 @@ func (h *Market) AveragePriceByExchange(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		internalErrorResponse(w, "failed to encode json")
+		return
+	}
 }

@@ -1,11 +1,11 @@
 package types
 
 import (
-	"errors"
+	"fmt"
 	"slices"
 )
 
-// Symbol represents blockhain symbol
+// Symbol represents blockhain symbol/pairs
 type Symbol string
 
 var (
@@ -15,19 +15,11 @@ var (
 	SOLUSDT  Symbol = "SOLUSDT"
 	ETHUSDT  Symbol = "ETHUSDT"
 
-	// ValidSymbols = map[Symbol]struct{}{
-	// 	BTCUSDT:  {},
-	// 	DOGEUSDT: {},
-	// 	TONUSDT:  {},
-	// 	SOLUSDT:  {},
-	// 	ETHUSDT:  {},
-	// }
-
 	ValidSymbols = []Symbol{
 		BTCUSDT, DOGEUSDT, TONUSDT, SOLUSDT, ETHUSDT,
 	}
 
-	ErrInvalidSymbol = errors.New("invalid symbol")
+	ErrInvalidSymbol = fmt.Errorf("invalid symbol. Available: %v", ValidSymbols)
 )
 
 func (s Symbol) IsValid() bool {

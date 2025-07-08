@@ -2,10 +2,13 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+const serviceName = "postgresql"
 
 type PostgreDB struct {
 	Pool     *pgxpool.Pool
@@ -51,4 +54,27 @@ func New(ctx context.Context, config Config) (*PostgreDB, error) {
 		Pool:     pool,
 		DBConfig: dbConfig,
 	}, nil
+}
+
+// Name returns the name of the database service
+func (db *PostgreDB) Name() string {
+	return serviceName
+}
+
+// Health checks the database connection health using Ping
+func (db *PostgreDB) Health(ctx context.Context) (bool, error) {
+	if db.Pool == nil {
+		return false, fmt.Errorf("database pool is not initialized")
+	}
+
+	// Create a context with timeout for the health check
+	healthCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	// Simply ping the database
+	if err := db.Pool.Ping(healthCtx); err != nil {
+		return false, fmt.Errorf("database ping failed: %w", err)
+	}
+
+	return true, nil
 }

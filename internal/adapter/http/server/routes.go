@@ -32,18 +32,68 @@ func (a *API) setupRoutes() {
 	a.router.HandleFunc("/mode/live", a.routes.mode.LiveMode)
 }
 
-// HealthCheck - returns system information.
+var (
+	StatusAvailable          = "available"
+	StatusPartiallyAvailable = "partially_available"
+	StatusHealthy            = "healthy"
+	StatusUnhealthy          = "unhealthy"
+)
+
+// HealthCheck returns system information and service health statuses
 func (a *API) HealthCheck(w http.ResponseWriter, r *http.Request) {
+	// Collect health status of all services
+	serviceStatuses := make(map[string]any)
+	healthyServices := 0
+	totalServices := len(a.services)
+
+	for _, svc := range a.services {
+		healthy, err := svc.Health(r.Context())
+		serviceStatus := StatusHealthy
+		if err != nil {
+			a.log.Error(r.Context(), "service health check failed",
+				"service", svc.Name(), "error", err)
+			serviceStatus = StatusUnhealthy
+		} else if !healthy {
+			serviceStatus = StatusUnhealthy
+		} else {
+			healthyServices++
+		}
+
+		serviceStatuses[svc.Name()] = serviceStatus
+	}
+
+	// Determine overall status
+	var status string
+	var statusCode int
+
+	switch {
+	case healthyServices == totalServices:
+		status = StatusAvailable
+		statusCode = http.StatusOK // 200
+	case healthyServices > 0:
+		status = StatusPartiallyAvailable
+		statusCode = http.StatusPartialContent // 206
+	default:
+		status = StatusUnhealthy
+		statusCode = http.StatusServiceUnavailable // 503
+	}
+
+	// Prepare response
 	response := map[string]any{
-		"status": "available",
-		"system_info": map[string]string{
-			"address": a.addr,
+		"system_info": map[string]any{
+			"address":       a.addr,
+			"data_mode":     "Live",
+			"status":        status,
+			"total_healthy": healthyServices,
+			"total":         totalServices,
+			"services":      serviceStatuses,
 		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		a.log.Error(r.Context(), "failed to encode", "err", err)
+		a.log.Error(r.Context(), "failed to encode health check response", "err", err)
 		return
 	}
 }

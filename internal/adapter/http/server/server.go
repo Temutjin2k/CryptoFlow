@@ -12,7 +12,13 @@ import (
 	"time"
 )
 
-const serverIPAddress = ":%d" // Change to 0.0.0.0 for external access
+const serverIPAddress = "0.0.0.0:%d"
+
+// Service defines services to provied healthcheck
+type Service interface {
+	Name() string
+	Health(ctx context.Context) (bool, error)
+}
 
 type API struct {
 	cfg    config.HTTPServer
@@ -21,9 +27,9 @@ type API struct {
 
 	addr string
 
-	routes *handlers // routes/handlers
-
-	log logger.Logger
+	routes   *handlers // routes/handlers
+	services []Service
+	log      logger.Logger
 }
 
 type handlers struct {
@@ -31,7 +37,7 @@ type handlers struct {
 	mode   handler.DataMode
 }
 
-func New(cfg config.Config, market ports.Market, logger logger.Logger) *API {
+func New(cfg config.Config, market ports.Market, services []Service, logger logger.Logger) *API {
 	addr := fmt.Sprintf(serverIPAddress, cfg.Server.HTTPServer.Port)
 
 	marketHandler := handler.NewMarket(market, logger)
@@ -46,8 +52,9 @@ func New(cfg config.Config, market ports.Market, logger logger.Logger) *API {
 	mux := http.NewServeMux()
 
 	api := &API{
-		router: mux,
-		routes: handlers,
+		router:   mux,
+		routes:   handlers,
+		services: services,
 
 		addr: addr,
 		cfg:  cfg.Server.HTTPServer,

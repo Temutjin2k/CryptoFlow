@@ -10,9 +10,10 @@ import (
 type (
 	// Config
 	Config struct {
-		Server   Server
-		Postgres postgres.Config
-		Redis    Redis
+		Server    Server
+		Postgres  postgres.Config
+		Redis     Redis
+		Exchanges Exchanges
 	}
 
 	// Servers config
@@ -30,15 +31,16 @@ type (
 		Password string `env:"REDIS_PASSWORD"`
 	}
 
+	// Exchanges config
 	Exchanges struct {
-		Exchange1_Port string `env:"EXCHANGE1_PORT" default:"40101"`
-		Exchange1_Name string `env:"EXCHANGE1_NAME" default:"exchange1"`
+		Exchange1Addr string `env:"EXCHANGE1_ADDR" default:"localhost:40101"`
+		// Exchange1_Name string `env:"EXCHANGE1_NAME" default:"exchange1"`
 
-		Exchange2_Port string `env:"EXCHANGE2_PORT" default:"40102"`
-		Exchange2_Name string `env:"EXCHANGE2_NAME" default:"exchange2"`
+		Exchange2Addr string `env:"EXCHANGE2_ADDR" default:"localhost:40102"`
+		// Exchange2_Name string `env:"EXCHANGE2_NAME" default:"exchange2"`
 
-		Exchange3_Port string `env:"EXCHANGE3_PORT" default:"40103"`
-		Exchange3_Name string `env:"EXCHANGE3_NAME" default:"exchange3"`
+		Exchange3Addr string `env:"EXCHANGE3_ADDR" default:"localhost:40103"`
+		// Exchange3_Name string `env:"EXCHANGE3_NAME" default:"exchange3"`
 	}
 )
 

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"marketflow/internal/domain"
+	"marketflow/internal/domain/types"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
 	"time"
@@ -23,22 +24,18 @@ func NewMarket(repo ports.MarketRepository, cache ports.Cache, logger logger.Log
 	}
 }
 
-func (s *Market) GetLatest(ctx context.Context, exchange, symbol string) (*domain.PriceData, error) {
+// GetLatest returns latest price data from cache.
+func (s *Market) GetLatest(ctx context.Context, exchange types.Exchange, symbol types.Symbol) (*domain.PriceData, error) {
 	const fn = "GetLatest"
 	log := s.logger.GetSlogLogger().With("fn", fn, "exchange", exchange, "symbol", symbol)
 
 	latest, err := s.cache.GetLatest(ctx, exchange, symbol)
 	if err != nil {
-		log.Warn("failed to get latest data from cache, trying to check from storage...", "error", err)
-
-		latest, err = s.storage.GetLatest(ctx, exchange, symbol)
-		if err != nil {
-			log.Error("failed to get latest data from storage", "error", err)
-			return nil, err
-		}
+		log.Error("failed to get latest data from cache", "error", err)
+		return nil, err
 	}
 
-	return latest, domain.ErrUnimplemented
+	return latest, nil
 }
 
 func (s *Market) GetHighest(ctx context.Context, exchange, symbol string, period time.Duration) (*domain.PriceData, error) {

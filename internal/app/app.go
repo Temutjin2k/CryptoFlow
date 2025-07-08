@@ -2,8 +2,11 @@ package app
 
 import (
 	"marketflow/config"
+	"marketflow/internal/adapter/exchange"
 	httpserver "marketflow/internal/adapter/http/server"
 	"marketflow/internal/adapter/redis"
+	"marketflow/internal/domain/types"
+	"marketflow/internal/ports"
 	"marketflow/internal/service"
 	"marketflow/pkg/logger"
 	"marketflow/pkg/postgres"
@@ -30,7 +33,7 @@ type App struct {
 }
 
 func NewApplication(ctx context.Context, config config.Config, logger logger.Logger) (*App, error) {
-	const fn = "NewApplication"
+	const fn = "app.NewApplication"
 
 	log := logger.GetSlogLogger().With("fn", fn)
 	// Postgres database
@@ -41,34 +44,47 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 	}
 
 	// Redis client
-	redisClient, err := redis.NewClient(ctx, config.Redis)
+	cache, err := redis.NewClient(ctx, config.Redis)
 	if err != nil {
-		log.Error("failed to connect postgres", "adress", config.Redis.Addr, "error", err)
+		log.Error("failed to connect postgres", "address", config.Redis.Addr, "error", err)
 		return nil, fmt.Errorf("failed to connect redis: %v", err)
 	}
+
 	// // Define data sources
-	// sources := []ports.ExchangeClient{
-	// 	exchange.NewExchange("exchange1", "localhost:40101", logger),
-	// 	exchange.NewExchange("exchange2", "localhost:40101", logger),
-	// 	exchange.NewExchange("exchange3", "localhost:40101", logger),
-	// }
+	exchange1 := exchange.NewExchange(types.Exchange1, config.Exchanges.Exchange1Addr, logger)
+	exchange2 := exchange.NewExchange(types.Exchange2, config.Exchanges.Exchange2Addr, logger)
+	exchange3 := exchange.NewExchange(types.Exchange3, config.Exchanges.Exchange3Addr, logger)
+
+	sources := []ports.ExchangeClient{
+		exchange1,
+		exchange2,
+		exchange3,
+	}
 
 	// DataCollector
-	// collector := service.NewCollector(nil, nil, logger)
+	collector := service.NewCollector(cache, nil, logger)
 
-	// // ExchangeManager
-	// exchangeManager := service.NewExchangeManager(collector, sources, logger)
+	// ExchangeManager
+	exchangeManager := service.NewExchangeManager(collector, sources, logger)
 
 	// Market service
-	market := service.NewMarket(nil, redisClient, logger)
+	market := service.NewMarket(nil, cache, logger)
 
+	// List of all services for healthcheck
+	serviceList := []httpserver.Service{
+		exchange1,
+		exchange2,
+		exchange3,
+		db,
+		cache,
+	}
 	// REST API server
-	httpServer := httpserver.New(config, market, logger)
+	httpServer := httpserver.New(config, market, serviceList, logger)
 
 	app := &App{
 		httpServer:      httpServer,
 		postgresDB:      db,
-		exchangeManager: nil,
+		exchangeManager: exchangeManager,
 
 		log: logger,
 	}
@@ -82,23 +98,27 @@ func (app *App) close(ctx context.Context) {
 	// Closing http server
 	err := app.httpServer.Stop()
 	if err != nil {
-		app.log.Info(ctx, "failed to shutdown HTTP service", "Err", err.Error())
+		app.log.Info(ctx, "failed to shutdown HTTP service", "error", err)
 	}
 }
 
 func (app *App) Run() error {
+	const fn = "app.Run"
+	log := app.log.GetSlogLogger().With("fn", fn)
+
 	errCh := make(chan error, 1)
 	ctx := context.Background()
 
 	// Running DataManager
-	// if err := app.exchangeManager.Start(ctx); err != nil {
-	// 	return err
-	// }
+	if err := app.exchangeManager.Start(ctx); err != nil {
+		log.Error("failed to start exchange manager", "error", err)
+		return err
+	}
 
 	// Running http server
 	app.httpServer.Run(errCh)
 
-	app.log.Info(ctx, "application started", "name", serviceName)
+	log.InfoContext(ctx, "application started", "name", serviceName)
 
 	// Waiting signal
 	shutdownCh := make(chan os.Signal, 1)
@@ -108,10 +128,10 @@ func (app *App) Run() error {
 	case errRun := <-errCh:
 		return errRun
 	case s := <-shutdownCh:
-		app.log.Info(ctx, "shuting down application", "signal", s.String())
+		log.InfoContext(ctx, "shuting down application", "signal", s.String())
 
 		app.close(ctx)
-		app.log.Info(ctx, "graceful shutdown completed!")
+		log.InfoContext(ctx, "graceful shutdown completed!")
 	}
 
 	return nil

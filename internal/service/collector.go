@@ -31,27 +31,29 @@ func (c *Collector) Start(processedPrices <-chan domain.PriceData) {
 
 	var count int
 	var lastPrice domain.PriceData
+	go func() {
+		for {
+			select {
+			case price, ok := <-processedPrices:
+				if !ok {
+					log.Error("processing completed", "total_prices", count)
+					return
+				}
 
-	for {
-		select {
-		case price, ok := <-processedPrices:
-			if !ok {
-				log.Error("processing completed", "total_prices", count)
-				return
+				count++
+				lastPrice = price
+
+				// TODO set price data correctly
+				if err := c.cache.SetLatest(context.Background(), price, time.Minute); err != nil {
+					log.Error("cache store failed", "error", err)
+				}
+
+			case <-ticker.C:
+				log.Error("processing status",
+					"total_processed", count,
+					"last_price", lastPrice)
 			}
-
-			count++
-			lastPrice = price
-
-			// TODO set price data correctly
-			if err := c.cache.SetLatest(context.Background(), domain.PriceData{}, time.Minute); err != nil {
-				log.Error("cache store failed", "error", err)
-			}
-
-		case <-ticker.C:
-			log.Error("processing status",
-				"total_processed", count,
-				"last_price", lastPrice)
 		}
-	}
+	}()
+
 }
