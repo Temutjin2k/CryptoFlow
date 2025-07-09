@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"slices"
 )
 
@@ -19,9 +18,11 @@ var (
 		Exchange2,
 		Exchange3,
 	}
-
-	ErrInvalidExchange = fmt.Errorf("invalid exchange. Available exchanges %v", ValidExchanges)
 )
+
+func (e *Exchange) IsValid() bool {
+	return IsValidExchange(string(*e))
+}
 
 func IsValidExchange(s string) bool {
 	return slices.Contains(ValidExchanges, Exchange(s))

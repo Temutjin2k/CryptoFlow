@@ -61,11 +61,14 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 		exchange3,
 	}
 
+	// Aggregator
+	aggregator := service.NewAggregator()
+
 	// DataCollector
 	collector := service.NewCollector(cache, nil, logger)
 
 	// ExchangeManager
-	exchangeManager := service.NewExchangeManager(collector, sources, logger)
+	exchangeManager := service.NewExchangeManager(sources, collector, aggregator, logger)
 
 	// Market service
 	market := service.NewMarket(nil, cache, logger)

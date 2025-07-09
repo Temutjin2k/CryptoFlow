@@ -33,7 +33,7 @@ func NewExchange(name types.Exchange, connAddr string, log logger.Logger) *Excha
 }
 
 // Start returns channel with data from given source and implements "Generator" pattern.
-func (e *Exchange) Start(ctx context.Context) (<-chan domain.PriceData, error) {
+func (e *Exchange) Start(ctx context.Context) (<-chan *domain.PriceData, error) {
 	// Using cancel func to cancel the goroutine when Stop() called
 	ctx, cancel := context.WithCancel(ctx)
 	e.cancel = cancel
@@ -47,7 +47,7 @@ func (e *Exchange) Start(ctx context.Context) (<-chan domain.PriceData, error) {
 	log := e.log.GetSlogLogger().With("exchange", e.Name(), "addr", e.Addr)
 	log.InfoContext(ctx, "connected to exchange!")
 
-	out := make(chan domain.PriceData)
+	out := make(chan *domain.PriceData)
 
 	go func() {
 		defer conn.Close()
@@ -66,7 +66,7 @@ func (e *Exchange) Start(ctx context.Context) (<-chan domain.PriceData, error) {
 			data.Exchange = e.name
 
 			select {
-			case out <- *data:
+			case out <- data:
 			case <-ctx.Done():
 				log.InfoContext(ctx, "context cancelled")
 				return

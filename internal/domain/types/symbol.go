@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"slices"
 )
 
@@ -18,8 +17,6 @@ var (
 	ValidSymbols = []Symbol{
 		BTCUSDT, DOGEUSDT, TONUSDT, SOLUSDT, ETHUSDT,
 	}
-
-	ErrInvalidSymbol = fmt.Errorf("invalid symbol. Available: %v", ValidSymbols)
 )
 
 func (s Symbol) IsValid() bool {

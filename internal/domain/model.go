@@ -15,6 +15,22 @@ type PriceData struct {
 	Timestamp time.Time      `json:"timestamp"`
 }
 
+func (p *PriceData) IsValid() (bool, error) {
+	if !p.Symbol.IsValid() {
+		return false, ErrInvalidSymbol
+	}
+	if !p.Exchange.IsValid() {
+		return false, ErrInvalidExchange
+	}
+	if p.Price < 0 {
+		return false, ErrNegativePrice
+	}
+	if p.Timestamp.IsZero() {
+		return false, ErrInvalidTimestamp
+	}
+	return true, nil
+}
+
 func (p PriceData) String() string {
 	return fmt.Sprintf("[%s] %s = %.4f @ %s", p.Exchange, p.Symbol, p.Price, p.Timestamp.Format(time.RFC3339))
 }

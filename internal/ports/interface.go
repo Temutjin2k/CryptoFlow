@@ -9,7 +9,7 @@ import (
 
 // redis
 type Cache interface {
-	SetLatest(ctx context.Context, latest domain.PriceData, duration time.Duration) error
+	SetLatest(ctx context.Context, latest *domain.PriceData, duration time.Duration) error
 	GetLatest(ctx context.Context, exchange types.Exchange, symbol types.Symbol) (*domain.PriceData, error)
 }
 
@@ -24,12 +24,27 @@ type MarketRepository interface {
 
 // ExchangeClient is an interface for Data sources
 type ExchangeClient interface {
-	Start(ctx context.Context) (<-chan domain.PriceData, error)
+	Start(ctx context.Context) (<-chan *domain.PriceData, error)
 	Stop() error
 }
 
+type Distributor interface {
+	FanOut(ctx context.Context)
+	Close() error
+}
+
+type WorkerPool interface {
+	Start(ctx context.Context)
+	Input() chan<- *domain.PriceData
+	Output() <-chan *domain.PriceData
+}
+
+type Aggregator interface {
+	FanIn(inputs ...<-chan *domain.PriceData) <-chan *domain.PriceData
+}
+
 type Collector interface {
-	Start(processedPrices <-chan domain.PriceData)
+	Start(processedPrices <-chan *domain.PriceData)
 }
 
 // Service

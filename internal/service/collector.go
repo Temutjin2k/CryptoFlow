@@ -22,7 +22,7 @@ func NewCollector(cache ports.Cache, store ports.MarketRepository, logger logger
 	}
 }
 
-func (c *Collector) Start(processedPrices <-chan domain.PriceData) {
+func (c *Collector) Start(processedPrices <-chan *domain.PriceData) {
 	const fn = "collector.Start"
 	log := c.logger.GetSlogLogger().With("fn", fn)
 
@@ -30,7 +30,7 @@ func (c *Collector) Start(processedPrices <-chan domain.PriceData) {
 	defer ticker.Stop()
 
 	var count int
-	var lastPrice domain.PriceData
+	var lastPrice *domain.PriceData
 	go func() {
 		for {
 			select {
