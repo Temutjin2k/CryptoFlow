@@ -57,6 +57,11 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 	exchange2 := exchange.NewExchange(types.Exchange2, config.DataManager.Exchanges.Exchange2Addr, logger)
 	exchange3 := exchange.NewExchange(types.Exchange3, config.DataManager.Exchanges.Exchange3Addr, logger)
 
+	// Test mode data sources
+	// exchange1 := exchange.GenerateTestData()
+	// exchange2 := exchange.GenerateTestData()
+	// exchange3 := exchange.GenerateTestData()
+
 	sources := []ports.ExchangeSource{
 		exchange1,
 		exchange2,

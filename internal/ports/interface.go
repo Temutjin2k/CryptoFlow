@@ -41,7 +41,8 @@ type WorkerPool interface {
 }
 
 type Aggregator interface {
-	FanIn(inputs ...<-chan *domain.PriceData) <-chan *domain.PriceData
+	FanIn(inputs ...<-chan *domain.PriceData)
+	Input() <-chan *domain.PriceData
 }
 
 type Collector interface {

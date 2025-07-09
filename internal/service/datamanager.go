@@ -58,7 +58,9 @@ func (m *ExchangeManager) Start(ctx context.Context) error {
 		distributor.FanOut(ctx)
 	}
 
-	resultch := m.aggregator.FanIn(m.getWorkerPoolOutputs()...)
+	m.aggregator.FanIn(m.getWorkerPoolOutputs()...)
+
+	resultch := m.aggregator.Input()
 
 	m.collector.Start(ctx, resultch)
 

@@ -46,7 +46,7 @@ func (c *Collector) run(ctx context.Context, processedPrices <-chan *domain.Pric
 	defer ticker.Stop()
 
 	var count int
-	var lastPrice *domain.PriceData
+	// var lastPrice *domain.PriceData
 
 	for {
 		select {
@@ -61,16 +61,16 @@ func (c *Collector) run(ctx context.Context, processedPrices <-chan *domain.Pric
 			}
 
 			count++
-			lastPrice = price
+			// lastPrice = price
 
 			if err := c.cache.SetLatest(ctx, price, time.Minute); err != nil {
 				log.Error("cache store failed", "error", err)
 			}
 
 		case <-ticker.C:
-			log.Info("processing status",
-				"total_processed", count,
-				"last_price", lastPrice)
+			// log.Info("processing status",
+			// 	"total_processed", count,
+			// 	"last_price", lastPrice)
 		}
 	}
 }

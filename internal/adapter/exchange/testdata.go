@@ -7,9 +7,12 @@ import (
 	"time"
 )
 
+type testExchange struct {
+}
+
 // GenerateTestData returns channel with generated data
-func GenerateTestData() <-chan domain.PriceData {
-	out := make(chan domain.PriceData)
+func GenerateTestData() <-chan *domain.PriceData {
+	out := make(chan *domain.PriceData)
 
 	symbols := []types.Symbol{
 		types.BTCUSDT,
@@ -26,7 +29,7 @@ func GenerateTestData() <-chan domain.PriceData {
 		for {
 			for _, symbol := range symbols {
 				price := generateRandomPrice(symbol, r)
-				data := domain.PriceData{
+				data := &domain.PriceData{
 					Exchange:  "test",
 					Symbol:    symbol,
 					Price:     price,
