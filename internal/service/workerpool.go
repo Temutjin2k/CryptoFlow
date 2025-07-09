@@ -10,6 +10,8 @@ import (
 
 // WorkerPool represents a pool of workers for processing PriceData
 type WorkerPool struct {
+	name string
+
 	workerCount int
 	inputChan   chan *domain.PriceData
 	outputChan  chan *domain.PriceData
@@ -18,8 +20,9 @@ type WorkerPool struct {
 	log logger.Logger
 }
 
-func NewWorkerPool(workerCount int, log logger.Logger) *WorkerPool {
+func NewWorkerPool(name string, workerCount int, log logger.Logger) *WorkerPool {
 	return &WorkerPool{
+		name:        name,
 		workerCount: workerCount,
 		inputChan:   make(chan *domain.PriceData, 100),
 		outputChan:  make(chan *domain.PriceData, 100),
@@ -31,8 +34,10 @@ func NewWorkerPool(workerCount int, log logger.Logger) *WorkerPool {
 func (wp *WorkerPool) Start(ctx context.Context) {
 	for i := 0; i < wp.workerCount; i++ {
 		wp.wg.Add(1)
-		go wp.worker(ctx, i+1)
+		go wp.worker(ctx)
 	}
+
+	wp.log.Info(ctx, "started workers", "pool_name", wp.name, "count", wp.workerCount)
 
 	go func() {
 		wp.wg.Wait()
@@ -41,9 +46,9 @@ func (wp *WorkerPool) Start(ctx context.Context) {
 }
 
 // worker processes incoming data
-func (wp *WorkerPool) worker(ctx context.Context, id int) {
+func (wp *WorkerPool) worker(ctx context.Context) {
 	defer wp.wg.Done()
-	log := wp.log.GetSlogLogger().With("worker_id", id)
+	log := wp.log.GetSlogLogger().With("pool_name", wp.name)
 	log.Info("worker started")
 
 	for {
@@ -92,5 +97,16 @@ func (wp *WorkerPool) Output() <-chan *domain.PriceData {
 
 // Close closes the input channel (signals workers to stop)
 func (wp *WorkerPool) Close() {
+	wp.log.Info(context.Background(), "closing worker pool")
+
+	// Check if channel is already closed
+	select {
+	case _, ok := <-wp.inputChan:
+		if !ok {
+			return
+		}
+	default:
+	}
+
 	close(wp.inputChan)
 }

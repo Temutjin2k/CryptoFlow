@@ -5,8 +5,13 @@ import (
 	"marketflow/internal/domain"
 )
 
+type workerPool interface {
+	Input() chan<- *domain.PriceData
+}
+
+// Distributor
 type Distributor struct {
-	workerPool *WorkerPool
+	workerPool workerPool
 	in         <-chan *domain.PriceData
 }
 
@@ -20,7 +25,6 @@ func NewDistriubtor(workerPool *WorkerPool, in <-chan *domain.PriceData) *Distri
 // FanOut reads data from incoming channel. And sends to pool of workers
 func (d *Distributor) FanOut(ctx context.Context) {
 	go func() {
-		defer d.workerPool.Close()
 		for {
 			select {
 			case <-ctx.Done():
@@ -38,8 +42,4 @@ func (d *Distributor) FanOut(ctx context.Context) {
 			}
 		}
 	}()
-}
-
-func (d *Distributor) Close() error {
-	return nil
 }

@@ -17,7 +17,7 @@ var (
 )
 
 // SetLatest saves PriceData into Redis 2 keys(by exchange and symbol, and by symbol only) with given TTL(Time-To-Live)
-func (c *Cache) SetLatest(ctx context.Context, latest domain.PriceData, ttl time.Duration) error {
+func (c *Cache) SetLatest(ctx context.Context, latest *domain.PriceData, ttl time.Duration) error {
 	key := c.createKeyByExchangeAndSymbol(latest.Exchange, latest.Symbol) // Key by exchange and symbol
 	keyBySymbol := c.createKeyBySymbol(latest.Symbol)
 

@@ -33,11 +33,26 @@ func NewClient(ctx context.Context, cfg config.Redis) (*Cache, error) {
 	if err := rdb.Ping(pingCtx).Err(); err != nil {
 		return nil, fmt.Errorf("failed to connect to Redis at %s: %w", cfg.Addr, err)
 	}
-
 	return &Cache{
 		client: rdb,
 		cfg:    cfg,
 	}, nil
+}
+
+// Closes the client
+func (c *Cache) Close() error {
+	if c.client == nil {
+		return nil // Already closed or not initialized
+	}
+
+	// Gracefully close connections
+	err := c.client.Close()
+	c.client = nil // Prevent double closing
+
+	if err != nil {
+		return fmt.Errorf("redis close error: %w", err)
+	}
+	return nil
 }
 
 // Name returns the name of the Redis service

@@ -22,21 +22,22 @@ type MarketRepository interface {
 	GetByPeriod(ctx context.Context, exchange, pair string, period time.Duration) ([]*domain.PriceStats, error)
 }
 
-// ExchangeClient is an interface for Data sources
-type ExchangeClient interface {
+// ExchangeSource is an interface for Data sources
+type ExchangeSource interface {
+	Name() string
 	Start(ctx context.Context) (<-chan *domain.PriceData, error)
-	Stop() error
+	Close() error
 }
 
 type Distributor interface {
 	FanOut(ctx context.Context)
-	Close() error
 }
 
 type WorkerPool interface {
 	Start(ctx context.Context)
 	Input() chan<- *domain.PriceData
 	Output() <-chan *domain.PriceData
+	Close()
 }
 
 type Aggregator interface {
@@ -44,7 +45,8 @@ type Aggregator interface {
 }
 
 type Collector interface {
-	Start(processedPrices <-chan *domain.PriceData)
+	Start(ctx context.Context, processedPrices <-chan *domain.PriceData)
+	Cancel() error
 }
 
 // Service

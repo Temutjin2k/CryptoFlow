@@ -1,11 +1,11 @@
 package service
 
 import (
-	"fmt"
 	"marketflow/internal/domain"
 	"sync"
 )
 
+// Aggregator represent structure to calculate avg, min, max prices.
 type Aggregator struct {
 }
 
@@ -17,19 +17,18 @@ func (a *Aggregator) FanIn(inputs ...<-chan *domain.PriceData) <-chan *domain.Pr
 	output := make(chan *domain.PriceData)
 
 	var wg sync.WaitGroup
-	for i, input := range inputs {
+	for _, input := range inputs {
 		wg.Add(1)
 		go func() {
 			for value := range input {
 				output <- value
 			}
-			fmt.Printf("done merging source %d\n", i)
 			wg.Done()
 		}()
 	}
 	go func() {
 		wg.Wait()
-		close(output) // this is important!!!
+		close(output)
 	}()
 
 	return output

@@ -22,11 +22,13 @@ const serviceName = "marketflow"
 
 type ExchangeManager interface {
 	Start(ctx context.Context) error
+	Close() error
 }
 
 type App struct {
 	httpServer      *httpserver.API
 	postgresDB      *postgres.PostgreDB
+	redis           *redis.Cache
 	exchangeManager ExchangeManager
 
 	log logger.Logger
@@ -50,12 +52,12 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 		return nil, fmt.Errorf("failed to connect redis: %v", err)
 	}
 
-	// // Define data sources
-	exchange1 := exchange.NewExchange(types.Exchange1, config.Exchanges.Exchange1Addr, logger)
-	exchange2 := exchange.NewExchange(types.Exchange2, config.Exchanges.Exchange2Addr, logger)
-	exchange3 := exchange.NewExchange(types.Exchange3, config.Exchanges.Exchange3Addr, logger)
+	// Define data sources
+	exchange1 := exchange.NewExchange(types.Exchange1, config.DataManager.Exchanges.Exchange1Addr, logger)
+	exchange2 := exchange.NewExchange(types.Exchange2, config.DataManager.Exchanges.Exchange2Addr, logger)
+	exchange3 := exchange.NewExchange(types.Exchange3, config.DataManager.Exchanges.Exchange3Addr, logger)
 
-	sources := []ports.ExchangeClient{
+	sources := []ports.ExchangeSource{
 		exchange1,
 		exchange2,
 		exchange3,
@@ -68,7 +70,7 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 	collector := service.NewCollector(cache, nil, logger)
 
 	// ExchangeManager
-	exchangeManager := service.NewExchangeManager(sources, collector, aggregator, logger)
+	exchangeManager := service.NewExchangeManager(sources, collector, aggregator, config.DataManager.Distributor.WorkerCount, logger)
 
 	// Market service
 	market := service.NewMarket(nil, cache, logger)
@@ -81,6 +83,7 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 		db,
 		cache,
 	}
+
 	// REST API server
 	httpServer := httpserver.New(config, market, serviceList, logger)
 
@@ -88,8 +91,8 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 		httpServer:      httpServer,
 		postgresDB:      db,
 		exchangeManager: exchangeManager,
-
-		log: logger,
+		redis:           cache,
+		log:             logger,
 	}
 	return app, nil
 }
@@ -98,10 +101,16 @@ func (app *App) close(ctx context.Context) {
 	// Closing database connection
 	app.postgresDB.Pool.Close()
 
+	// Closing redis
+	app.redis.Close()
+
+	if err := app.exchangeManager.Close(); err != nil {
+		app.log.Warn(ctx, "failed to shutdown exchange manager", "error", err)
+	}
+
 	// Closing http server
-	err := app.httpServer.Stop()
-	if err != nil {
-		app.log.Info(ctx, "failed to shutdown HTTP service", "error", err)
+	if err := app.httpServer.Stop(); err != nil {
+		app.log.Warn(ctx, "failed to shutdown HTTP service", "error", err)
 	}
 }
 

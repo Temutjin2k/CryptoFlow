@@ -44,7 +44,7 @@ func (e *Exchange) Start(ctx context.Context) (<-chan *domain.PriceData, error) 
 	}
 	e.conn = conn
 
-	log := e.log.GetSlogLogger().With("exchange", e.Name(), "addr", e.Addr)
+	log := e.log.GetSlogLogger().With("name", e.Name(), "address", e.Addr)
 	log.InfoContext(ctx, "connected to exchange!")
 
 	out := make(chan *domain.PriceData)
@@ -73,7 +73,7 @@ func (e *Exchange) Start(ctx context.Context) (<-chan *domain.PriceData, error) 
 			}
 		}
 
-		if err := scanner.Err(); err != nil {
+		if err := scanner.Err(); err != nil && ctx.Err() == nil {
 			log.ErrorContext(ctx, "scanner error", "error", err)
 		}
 	}()
@@ -82,17 +82,18 @@ func (e *Exchange) Start(ctx context.Context) (<-chan *domain.PriceData, error) 
 }
 
 // Stop closes the connection
-func (e *Exchange) Stop() error {
+func (e *Exchange) Close() error {
+	const fn = "exchange.Stop"
+	log := e.log.GetSlogLogger().With("fn", fn, "name", e.Name(), "address", e.Addr)
+
 	if e.cancel != nil {
 		e.cancel() // canceling context to stop the gouroutine
 	}
 
-	ctx := context.Background()
-	e.log.Info(ctx, "closing connection", "name", e.Name, "addres", e.Addr)
-
+	log.Info("closing connection")
 	if e.conn != nil {
 		if err := e.conn.Close(); err != nil {
-			e.log.Error(ctx, "failed to close connection", "exchange", e.Name, "error", err)
+			log.Error("failed to close connection", "error", err)
 			return err
 		}
 	}

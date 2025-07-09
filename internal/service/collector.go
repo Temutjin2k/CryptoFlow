@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"marketflow/internal/domain"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
@@ -9,21 +10,36 @@ import (
 )
 
 type Collector struct {
-	cache  ports.Cache
-	store  ports.MarketRepository
+	cache ports.Cache
+	store ports.MarketRepository
+
+	cancelFunc context.CancelFunc
+	doneChan   chan struct{}
+
 	logger logger.Logger
 }
 
 func NewCollector(cache ports.Cache, store ports.MarketRepository, logger logger.Logger) *Collector {
 	return &Collector{
-		cache:  cache,
-		store:  store,
-		logger: logger,
+		cache:    cache,
+		store:    store,
+		doneChan: make(chan struct{}),
+		logger:   logger,
 	}
 }
 
-func (c *Collector) Start(processedPrices <-chan *domain.PriceData) {
-	const fn = "collector.Start"
+// Start starts to listens incoming channel
+func (c *Collector) Start(ctx context.Context, processedPrices <-chan *domain.PriceData) {
+	ctx, cancel := context.WithCancel(ctx)
+	c.cancelFunc = cancel
+
+	go c.run(ctx, processedPrices)
+}
+
+func (c *Collector) run(ctx context.Context, processedPrices <-chan *domain.PriceData) {
+	defer close(c.doneChan)
+
+	const fn = "collector.run"
 	log := c.logger.GetSlogLogger().With("fn", fn)
 
 	ticker := time.NewTicker(10 * time.Second)
@@ -31,29 +47,46 @@ func (c *Collector) Start(processedPrices <-chan *domain.PriceData) {
 
 	var count int
 	var lastPrice *domain.PriceData
-	go func() {
-		for {
-			select {
-			case price, ok := <-processedPrices:
-				if !ok {
-					log.Error("processing completed", "total_prices", count)
-					return
-				}
 
-				count++
-				lastPrice = price
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info("shutting down collector")
+			return
 
-				// TODO set price data correctly
-				if err := c.cache.SetLatest(context.Background(), price, time.Minute); err != nil {
-					log.Error("cache store failed", "error", err)
-				}
-
-			case <-ticker.C:
-				log.Error("processing status",
-					"total_processed", count,
-					"last_price", lastPrice)
+		case price, ok := <-processedPrices:
+			if !ok {
+				log.Info("collector's input channel closed", "total_prices", count)
+				return
 			}
-		}
-	}()
 
+			count++
+			lastPrice = price
+
+			if err := c.cache.SetLatest(ctx, price, time.Minute); err != nil {
+				log.Error("cache store failed", "error", err)
+			}
+
+		case <-ticker.C:
+			log.Info("processing status",
+				"total_processed", count,
+				"last_price", lastPrice)
+		}
+	}
+}
+
+// Cancel gracefully shutdowns collector
+func (c *Collector) Cancel() error {
+	if c.cancelFunc != nil {
+		c.cancelFunc()
+
+		// Waiting confirmation to close collector
+		select {
+		case <-c.doneChan:
+			return nil
+		case <-time.After(5 * time.Second):
+			return errors.New("timeout waiting for collector to stop")
+		}
+	}
+	return nil
 }

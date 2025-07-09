@@ -10,10 +10,10 @@ import (
 type (
 	// Config
 	Config struct {
-		Server    Server
-		Postgres  postgres.Config
-		Redis     Redis
-		Exchanges Exchanges
+		Server      Server
+		Postgres    postgres.Config
+		Redis       Redis
+		DataManager DataManager
 	}
 
 	// Servers config
@@ -29,6 +29,15 @@ type (
 	Redis struct {
 		Addr     string `env:"REDIS_ADDR"`
 		Password string `env:"REDIS_PASSWORD"`
+	}
+
+	DataManager struct {
+		Exchanges   Exchanges
+		Distributor Distributor
+	}
+
+	Distributor struct {
+		WorkerCount int `env:"DISTRIBUTOR_WORKER_COUNT" default:"1"`
 	}
 
 	// Exchanges config
