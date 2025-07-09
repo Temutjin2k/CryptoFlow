@@ -10,8 +10,10 @@ import (
 type (
 	// Config
 	Config struct {
-		Server   Server
-		Postgres postgres.Config
+		Server      Server
+		Postgres    postgres.Config
+		Redis       Redis
+		DataManager DataManager
 	}
 
 	// Servers config
@@ -22,6 +24,32 @@ type (
 	// HTTP service
 	HTTPServer struct {
 		Port int `env:"HTTP_PORT" default:"8080"`
+	}
+
+	Redis struct {
+		Addr     string `env:"REDIS_ADDR"`
+		Password string `env:"REDIS_PASSWORD"`
+	}
+
+	DataManager struct {
+		Exchanges   Exchanges
+		Distributor Distributor
+	}
+
+	Distributor struct {
+		WorkerCount int `env:"DISTRIBUTOR_WORKER_COUNT" default:"1"`
+	}
+
+	// Exchanges config
+	Exchanges struct {
+		Exchange1Addr string `env:"EXCHANGE1_ADDR" default:"localhost:40101"`
+		// Exchange1_Name string `env:"EXCHANGE1_NAME" default:"exchange1"`
+
+		Exchange2Addr string `env:"EXCHANGE2_ADDR" default:"localhost:40102"`
+		// Exchange2_Name string `env:"EXCHANGE2_NAME" default:"exchange2"`
+
+		Exchange3Addr string `env:"EXCHANGE3_ADDR" default:"localhost:40103"`
+		// Exchange3_Name string `env:"EXCHANGE3_NAME" default:"exchange3"`
 	}
 )
 

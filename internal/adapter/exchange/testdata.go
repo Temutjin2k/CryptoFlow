@@ -2,14 +2,22 @@ package exchange
 
 import (
 	"marketflow/internal/domain"
+	"marketflow/internal/domain/types"
 	"math/rand"
 	"time"
 )
 
+// GenerateTestData returns channel with generated data
 func GenerateTestData() <-chan domain.PriceData {
 	out := make(chan domain.PriceData)
 
-	symbols := []string{"BTCUSDT", "ETHUSDT", "SOLUSDT", "TONUSDT", "DOGEUSDT"}
+	symbols := []types.Symbol{
+		types.BTCUSDT,
+		types.ETHUSDT,
+		types.SOLUSDT,
+		types.TONUSDT,
+		types.DOGEUSDT,
+	}
 
 	go func() {
 		defer close(out)
@@ -27,26 +35,27 @@ func GenerateTestData() <-chan domain.PriceData {
 
 				out <- data
 			}
-			time.Sleep(1 * time.Second)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
 	return out
 }
 
-func generateRandomPrice(symbol string, r *rand.Rand) float64 {
+// generateRandomPrice generates random price fluctuation (±15%)
+func generateRandomPrice(symbol types.Symbol, r *rand.Rand) float64 {
 	switch symbol {
-	case "BTCUSDT":
-		return 105000 + r.Float64()*500
-	case "ETHUSDT":
-		return 4200 + r.Float64()*50
-	case "SOLUSDT":
-		return 100 + r.Float64()*5
-	case "TONUSDT":
-		return 4 + r.Float64()*0.05
-	case "DOGEUSDT":
-		return 0.27 + r.Float64()*0.01
+	case types.BTCUSDT:
+		return 105000 * (1 + (r.Float64()-0.5)*0.3)
+	case types.ETHUSDT:
+		return 4200 * (1 + (r.Float64()-0.5)*0.3)
+	case types.SOLUSDT:
+		return 100 * (1 + (r.Float64()-0.5)*0.3)
+	case types.TONUSDT:
+		return 4 * (1 + (r.Float64()-0.5)*0.3)
+	case types.DOGEUSDT:
+		return 0.27 * (1 + (r.Float64()-0.5)*0.3)
 	default:
-		return 100 + r.Float64()*10
+		return 100 * (1 + (r.Float64()-0.5)*0.3)
 	}
 }

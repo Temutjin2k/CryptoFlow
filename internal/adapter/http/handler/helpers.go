@@ -8,7 +8,7 @@ import (
 
 type envelope map[string]any
 
-func errorResponse(w http.ResponseWriter, r *http.Request, status int, message any) {
+func errorResponse(w http.ResponseWriter, status int, message any) {
 	env := envelope{"error": message}
 
 	// Write the response using the writeJSON() helper. If this happens to return an
@@ -35,4 +35,8 @@ func writeJSON(w http.ResponseWriter, status int, data envelope, headers http.He
 	w.Write(js)
 
 	return nil
+}
+
+func internalErrorResponse(w http.ResponseWriter, message any) {
+	errorResponse(w, http.StatusInternalServerError, message)
 }

@@ -28,5 +28,8 @@ go.work
 # Docker
 /data/
 
+# redis
+/local/
+
 # Enviroment variables
 .env
