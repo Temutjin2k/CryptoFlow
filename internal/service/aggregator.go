@@ -1,40 +1,37 @@
 package service
 
 import (
+	"context"
 	"marketflow/internal/domain"
-	"sync"
+	"time"
 )
 
-// Aggregator represent structure to calculate avg, min, max prices.
 type Aggregator struct {
-	input chan *domain.PriceData
+	service *Market
 }
 
-func NewAggregator() *Aggregator {
-	return &Aggregator{}
-}
-
-func (a *Aggregator) FanIn(inputs ...<-chan *domain.PriceData) {
-	var wg sync.WaitGroup
-	for _, input := range inputs {
-		wg.Add(1)
-		go func() {
-			for value := range input {
-				a.input <- value
-			}
-			wg.Done()
-		}()
+func NewAggregator(service *Market) *Aggregator {
+	return &Aggregator{
+		service: service,
 	}
+}
+
+func (a *Aggregator) FanIn(ctx context.Context, _ ...<-chan *domain.PriceData) {
+	if a.service == nil {
+		panic("aggregator service is nil")
+	}
+
 	go func() {
-		wg.Wait()
-		close(a.input)
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				a.service.AggregateAndStore(ctx)
+			}
+		}
 	}()
-}
-
-func (a *Aggregator) listenAndServe() {
-
-}
-
-func (a *Aggregator) Input() <-chan *domain.PriceData {
-	return a.input
 }

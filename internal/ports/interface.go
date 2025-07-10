@@ -11,15 +11,14 @@ import (
 type Cache interface {
 	SetLatest(ctx context.Context, latest *domain.PriceData, duration time.Duration) error
 	GetLatest(ctx context.Context, exchange types.Exchange, symbol types.Symbol) (*domain.PriceData, error)
+	GetPriceInPeriod(ctx context.Context, exchange, symbol string, period time.Duration) ([]float64, error)
 }
 
 // postgres
 type MarketRepository interface {
-	StoreStats(stat domain.PriceStats) error
-	StoreStatsBatch(stats []domain.PriceStats) error
-	GetStats(pair, exchange string, since time.Time) ([]*domain.PriceStats, error)
-	GetLatest(ctx context.Context, exchange, pair string) (*domain.PriceData, error)
-	GetByPeriod(ctx context.Context, exchange, pair string, period time.Duration) ([]*domain.PriceStats, error)
+	StoreStats(ctx context.Context, stat *domain.PriceStats) error
+	GetStats(ctx context.Context, pair, exchange string, since time.Time) ([]*domain.PriceStats, error)
+	GetAverageStat(ctx context.Context, pair, exchange string) (*domain.PriceStats, error)
 }
 
 // ExchangeSource is an interface for Data sources
@@ -41,8 +40,7 @@ type WorkerPool interface {
 }
 
 type Aggregator interface {
-	FanIn(inputs ...<-chan *domain.PriceData)
-	Input() <-chan *domain.PriceData
+	FanIn(ctx context.Context, inputs ...<-chan *domain.PriceData)
 }
 
 type Collector interface {
@@ -54,7 +52,7 @@ type Collector interface {
 type Market interface {
 	// GetLatest returns latest price data from cache.
 	GetLatest(ctx context.Context, exchange types.Exchange, symbol types.Symbol) (*domain.PriceData, error)
-	GetHighest(ctx context.Context, exchange, symbol string, period time.Duration) (*domain.PriceData, error)
-	GetLowest(ctx context.Context, exchange, symbol string, period time.Duration) (*domain.PriceData, error)
-	GetAverage(ctx context.Context, exchange, symbol string, period time.Duration) (*domain.PriceData, error)
+	GetHighest(ctx context.Context, exchange, symbol string, period time.Duration) (*domain.PriceStats, error)
+	GetLowest(ctx context.Context, exchange, symbol string, period time.Duration) (*domain.PriceStats, error)
+	GetAverage(ctx context.Context, exchange, symbol string) (*domain.PriceStats, error)
 }

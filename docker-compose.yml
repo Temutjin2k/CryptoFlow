@@ -46,6 +46,22 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    image: migrate/migrate
+    networks:
+      - market-net
+    volumes:
+      - ./migrations:/migrations
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://user:admin@postgresql:5432/marketflow?sslmode=disable",
+        "up"
+      ]
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
   redis:
     image: redis:7.2-alpine
     command: redis-server /usr/local/etc/redis/redis.conf
@@ -67,18 +83,24 @@ services:
 
   exchange1:
     image: exchange1:latest
-    container_name: ${EXCHANGE1_NAME}
+    container_name: exchange1
     ports:
-      - "${EXCHANGE1_PORT}:${EXCHANGE1_PORT}"
+      - "40101:40101"
+    networks:
+      - market-net
 
   exchange2:
     image: exchange2:latest
-    container_name: ${EXCHANGE2_NAME}
+    container_name: exchange2
     ports:
-      - "${EXCHANGE2_PORT}:${EXCHANGE2_PORT}"
+      - "40102:40102"
+    networks:
+      - market-net
 
   exchange3:
     image: exchange3:latest
-    container_name: ${EXCHANGE3_NAME}
+    container_name: exchange3
     ports:
-      - "${EXCHANGE3_PORT}:${EXCHANGE3_PORT}"
+      - "40103:40103"
+    networks:
+      - market-net
