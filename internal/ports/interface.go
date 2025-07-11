@@ -23,8 +23,9 @@ type ExchangeManager interface {
 // postgres
 type MarketRepository interface {
 	StoreStats(ctx context.Context, stat []*domain.PriceStats) error
-	GetStats(ctx context.Context, pair, exchange string, since time.Time) ([]*domain.PriceStats, error)
-	GetAverageStat(ctx context.Context, pair, exchange string) (*domain.PriceStats, error)
+	GetHighestStat(ctx context.Context, exchange types.Exchange, pair types.Symbol, period time.Duration) (*domain.PriceStats, error)
+	GetAverageStat(ctx context.Context, exchange types.Exchange, pair types.Symbol, period time.Duration) (*domain.PriceStats, error)
+	GetLowestStat(ctx context.Context, exchange types.Exchange, pair types.Symbol, period time.Duration) (*domain.PriceStats, error)
 }
 
 // ExchangeSource is an interface for Data sources
@@ -65,7 +66,7 @@ type Sheduler interface {
 type Market interface {
 	// GetLatest returns latest price data from cache.
 	GetLatest(ctx context.Context, exchange types.Exchange, symbol types.Symbol) (*domain.PriceData, error)
-	GetHighest(ctx context.Context, exchange, symbol string, period time.Duration) (*domain.PriceStats, error)
-	GetLowest(ctx context.Context, exchange, symbol string, period time.Duration) (*domain.PriceStats, error)
-	GetAverage(ctx context.Context, exchange, symbol string) (*domain.PriceStats, error)
+	GetHighest(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) (*domain.PriceStats, error)
+	GetLowest(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) (*domain.PriceStats, error)
+	GetAverage(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) (*domain.PriceStats, error)
 }

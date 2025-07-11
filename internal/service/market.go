@@ -6,7 +6,6 @@ import (
 	"marketflow/internal/domain/types"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
-	"sync"
 	"time"
 )
 
@@ -14,7 +13,6 @@ type Market struct {
 	storage ports.MarketRepository
 	cache   ports.Cache
 	logger  logger.Logger
-	mu      sync.RWMutex
 }
 
 func NewMarket(repo ports.MarketRepository, cache ports.Cache, logger logger.Logger) *Market {
@@ -43,35 +41,18 @@ func (s *Market) GetLatest(ctx context.Context, exchange types.Exchange, symbol 
 	return latest, nil
 }
 
-func (s *Market) GetHighest(ctx context.Context, exchange, symbol string, period time.Duration) (*domain.PriceStats, error) {
+func (s *Market) GetHighest(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) (*domain.PriceStats, error) {
 	const fn = "GetHighest"
 	log := s.logger.GetSlogLogger().With("fn", fn, "exchange", exchange, "symbol", symbol)
 
-	if symbol == "" {
-		return nil, domain.ErrInvalidSymbol
-	}
-
-	since := time.Now().Add(-period).Truncate(time.Minute)
-
-	//to prevent race condition
-	// s.mu.RLock()
-	stats, err := s.storage.GetStats(ctx, symbol, exchange, since)
-	// s.mu.RUnlock()
-
+	highest, err := s.storage.GetHighestStat(ctx, exchange, symbol, period)
 	if err != nil {
 		log.Error("failed to get stats from database", "error", err)
 		return nil, err
 	}
 
-	if len(stats) == 0 {
+	if highest == nil {
 		return nil, domain.ErrNotFound
-	}
-
-	highest := stats[0]
-	for _, v := range stats[1:] {
-		if v != nil && v.Max > highest.Max {
-			highest = v
-		}
 	}
 
 	return &domain.PriceStats{
@@ -82,30 +63,18 @@ func (s *Market) GetHighest(ctx context.Context, exchange, symbol string, period
 	}, nil
 }
 
-func (s *Market) GetLowest(ctx context.Context, exchange, symbol string, period time.Duration) (*domain.PriceStats, error) {
+func (s *Market) GetLowest(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) (*domain.PriceStats, error) {
 	const fn = "GetLowest"
 	log := s.logger.GetSlogLogger().With("fn", fn, "exchange", exchange, "symbol", symbol)
 
-	since := time.Now().Add(-period - time.Minute)
-
-	s.mu.RLock()
-	stats, err := s.storage.GetStats(ctx, symbol, exchange, since)
-	s.mu.RUnlock()
-
-	if len(stats) == 0 {
-		return nil, domain.ErrNotFound
-	}
-
+	lowest, err := s.storage.GetLowestStat(ctx, exchange, symbol, period)
 	if err != nil {
 		log.Error("failed to get stats from database", "error", err)
 		return nil, err
 	}
 
-	lowest := stats[0]
-	for _, v := range stats[1:] {
-		if v.Max < lowest.Min {
-			lowest = v
-		}
+	if lowest == nil {
+		return nil, domain.ErrNotFound
 	}
 
 	return &domain.PriceStats{
@@ -116,11 +85,11 @@ func (s *Market) GetLowest(ctx context.Context, exchange, symbol string, period 
 	}, nil
 }
 
-func (s *Market) GetAverage(ctx context.Context, exchange, symbol string) (*domain.PriceStats, error) {
+func (s *Market) GetAverage(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) (*domain.PriceStats, error) {
 	const fn = "GetAverage"
 	log := s.logger.GetSlogLogger().With("fn", fn, "exchange", exchange, "symbol", symbol)
 
-	avg, err := s.storage.GetAverageStat(ctx, symbol, exchange)
+	avg, err := s.storage.GetAverageStat(ctx, exchange, symbol, period)
 	if err != nil {
 		log.Error("failed to get stats from database", "error", err)
 		return nil, err

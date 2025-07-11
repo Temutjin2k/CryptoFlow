@@ -104,9 +104,9 @@ func (s *Aggregator) aggregateAndStore(ctx context.Context) {
 			min, max, avg := aggregate(values)
 
 			stat := &domain.PriceStats{
-				Exchange:  string(exchange),
-				Pair:      string(symbol),
-				Timestamp: time.Now().Truncate(time.Minute),
+				Exchange:  exchange,
+				Pair:      symbol,
+				Timestamp: time.Now(),
 				Average:   avg,
 				Min:       min,
 				Max:       max,

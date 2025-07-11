@@ -95,5 +95,5 @@ func (a *API) Run(errCh chan<- error) {
 
 // applyMiddlewares to wrap default http.ServeMux
 func (m *API) applyMiddlewares(next http.Handler) http.Handler {
-	return m.LoggingMiddleware(next)
+	return next
 }

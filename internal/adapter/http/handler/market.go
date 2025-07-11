@@ -108,7 +108,7 @@ func (h *Market) HighestPrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.market.GetHighest(ctx, "", symbol, periodParsed)
+	result, err := h.market.GetHighest(ctx, types.AllExchanges, types.Symbol(symbol), periodParsed)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			notFoundErrorResponse(w)
@@ -130,6 +130,9 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 	log := h.log.GetSlogLogger().With("symbol", symbol, "exchange", exchange)
 
 	v := validator.New()
+
+	validateExchange(v, exchange)
+
 	if validateSymbol(v, symbol); !v.Valid() {
 		log.Error("failed to validate request", "errors", v.Errors)
 		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
@@ -141,7 +144,7 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	result, err := h.market.GetHighest(ctx, exchange, symbol, periodParsed)
+	result, err := h.market.GetHighest(ctx, types.Exchange(exchange), types.Symbol(symbol), periodParsed)
 
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
@@ -166,6 +169,7 @@ func (h *Market) LowestPrice(w http.ResponseWriter, r *http.Request) {
 	log := h.log.GetSlogLogger().With("symbol", symbol)
 
 	v := validator.New()
+
 	if validateSymbol(v, symbol); !v.Valid() {
 		log.Error("failed to validate request", "errors", v.Errors)
 		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
@@ -177,7 +181,7 @@ func (h *Market) LowestPrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.market.GetLowest(ctx, "", symbol, periodParsed)
+	result, err := h.market.GetLowest(ctx, types.AllExchanges, types.Symbol(symbol), periodParsed)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			notFoundErrorResponse(w)
@@ -200,6 +204,9 @@ func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 	log := h.log.GetSlogLogger().With("symbol", symbol, "exchange", exchange)
 
 	v := validator.New()
+
+	validateExchange(v, exchange)
+
 	if validateSymbol(v, symbol); !v.Valid() {
 		log.Error("failed to validate request", "errors", v.Errors)
 		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
@@ -211,7 +218,7 @@ func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.market.GetLowest(ctx, exchange, symbol, periodParsed)
+	result, err := h.market.GetLowest(ctx, types.Exchange(exchange), types.Symbol(symbol), periodParsed)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			notFoundErrorResponse(w)
@@ -241,7 +248,12 @@ func (h *Market) AveragePrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.market.GetAverage(ctx, "", symbol)
+	periodParsed, ok := parsePeriod(w, r, h.log)
+	if !ok {
+		return
+	}
+
+	result, err := h.market.GetAverage(ctx, types.AllExchanges, types.Symbol(symbol), periodParsed)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			notFoundErrorResponse(w)
@@ -264,13 +276,21 @@ func (h *Market) AveragePriceByExchange(w http.ResponseWriter, r *http.Request) 
 	log := h.log.GetSlogLogger().With("symbol", symbol, "exchange", exchange)
 
 	v := validator.New()
+
+	validateExchange(v, exchange)
+
 	if validateSymbol(v, symbol); !v.Valid() {
 		log.Error("failed to validate request", "errors", v.Errors)
 		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
 		return
 	}
 
-	result, err := h.market.GetAverage(ctx, exchange, symbol)
+	periodParsed, ok := parsePeriod(w, r, h.log)
+	if !ok {
+		return
+	}
+
+	result, err := h.market.GetAverage(ctx, types.Exchange(exchange), types.Symbol(symbol), periodParsed)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			notFoundErrorResponse(w)

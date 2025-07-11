@@ -1,0 +1,2 @@
+CREATE INDEX idx_aggregated_prices_pair_exchange_time ON aggregated_prices(pair_name, exchange, timestamp);
+CREATE INDEX idx_aggregated_prices_prices ON aggregated_prices(min_price, max_price, average_price);

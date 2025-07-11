@@ -75,10 +75,10 @@ func (pd *PriceData) UnmarshalJSON(data []byte) error {
 }
 
 type PriceStats struct {
-	Exchange  string    `json:"exchange"`
-	Pair      string    `json:"symbol"`
-	Timestamp time.Time `json:"timestamp"`
-	Average   float64   `json:"average,omitempty"`
-	Min       float64   `json:"min,omitempty"`
-	Max       float64   `json:"max,omitempty"`
+	Exchange  types.Exchange `json:"exchange"`
+	Pair      types.Symbol   `json:"symbol"`
+	Timestamp time.Time      `json:"timestamp"`
+	Average   float64        `json:"average,omitempty"`
+	Min       float64        `json:"min,omitempty"`
+	Max       float64        `json:"max,omitempty"`
 }
