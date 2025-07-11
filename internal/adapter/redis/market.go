@@ -50,7 +50,7 @@ func (c *Cache) GetLatest(ctx context.Context, exchange types.Exchange, symbol t
 
 	val, err := c.client.Get(ctx, key).Result()
 	if err == goredis.Nil {
-		return nil, ErrNotFound
+		return nil, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get key %s: %w", key, err)
 	}

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"marketflow/internal/adapter/postgres"
 	"marketflow/internal/domain"
 	"marketflow/internal/domain/types"
 	"marketflow/internal/ports"
@@ -37,6 +36,10 @@ func (s *Market) GetLatest(ctx context.Context, exchange types.Exchange, symbol 
 		return nil, err
 	}
 
+	if latest == nil {
+		return nil, domain.ErrNotFound
+	}
+
 	return latest, nil
 }
 
@@ -61,7 +64,7 @@ func (s *Market) GetHighest(ctx context.Context, exchange, symbol string, period
 	}
 
 	if len(stats) == 0 {
-		return nil, postgres.ErrNotFound
+		return nil, domain.ErrNotFound
 	}
 
 	highest := stats[0]
@@ -90,7 +93,7 @@ func (s *Market) GetLowest(ctx context.Context, exchange, symbol string, period 
 	s.mu.RUnlock()
 
 	if len(stats) == 0 {
-		return nil, postgres.ErrNotFound
+		return nil, domain.ErrNotFound
 	}
 
 	if err != nil {
@@ -124,7 +127,7 @@ func (s *Market) GetAverage(ctx context.Context, exchange, symbol string) (*doma
 	}
 
 	if avg == nil {
-		return nil, postgres.ErrNotFound
+		return nil, domain.ErrNotFound
 	}
 
 	return &domain.PriceStats{

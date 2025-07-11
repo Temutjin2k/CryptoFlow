@@ -2,7 +2,7 @@ package handler
 
 import (
 	"errors"
-	"marketflow/internal/adapter/postgres"
+	"marketflow/internal/domain"
 	"marketflow/internal/domain/types"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
@@ -41,6 +41,10 @@ func (h *Market) LatestPrice(w http.ResponseWriter, r *http.Request) {
 	// getting latest price data from all exchanges
 	result, err := h.market.GetLatest(ctx, types.AllExchanges, types.Symbol(symbol))
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			notFoundErrorResponse(w)
+			return
+		}
 		log.Error("failed to get latest data from all exchanges", "error", err)
 		internalErrorResponse(w, "failed to get latest data from all exchanges")
 		return
@@ -71,6 +75,10 @@ func (h *Market) LatestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 	// getting latest price data from specific exchange.
 	result, err := h.market.GetLatest(ctx, types.Exchange(exchange), types.Symbol(symbol))
 	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			notFoundErrorResponse(w)
+			return
+		}
 		log.Error("failed to get latest data from specific exchange", "error", err)
 		internalErrorResponse(w, "failed to get latest data from all exchanges")
 		return
@@ -102,8 +110,8 @@ func (h *Market) HighestPrice(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.market.GetHighest(ctx, "", symbol, periodParsed)
 	if err != nil {
-		if errors.Is(err, postgres.ErrNotFound) {
-			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
+		if errors.Is(err, domain.ErrNotFound) {
+			notFoundErrorResponse(w)
 			return
 		}
 		h.log.Error(ctx, "failed to fetch highest price", "error", err)
@@ -136,8 +144,8 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 	result, err := h.market.GetHighest(ctx, exchange, symbol, periodParsed)
 
 	if err != nil {
-		if errors.Is(err, postgres.ErrNotFound) {
-			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
+		if errors.Is(err, domain.ErrNotFound) {
+			notFoundErrorResponse(w)
 			return
 		}
 
@@ -171,8 +179,8 @@ func (h *Market) LowestPrice(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.market.GetLowest(ctx, "", symbol, periodParsed)
 	if err != nil {
-		if errors.Is(err, postgres.ErrNotFound) {
-			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
+		if errors.Is(err, domain.ErrNotFound) {
+			notFoundErrorResponse(w)
 			return
 		}
 
@@ -205,8 +213,8 @@ func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.market.GetLowest(ctx, exchange, symbol, periodParsed)
 	if err != nil {
-		if errors.Is(err, postgres.ErrNotFound) {
-			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
+		if errors.Is(err, domain.ErrNotFound) {
+			notFoundErrorResponse(w)
 			return
 		}
 
@@ -235,8 +243,8 @@ func (h *Market) AveragePrice(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.market.GetAverage(ctx, "", symbol)
 	if err != nil {
-		if errors.Is(err, postgres.ErrNotFound) {
-			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
+		if errors.Is(err, domain.ErrNotFound) {
+			notFoundErrorResponse(w)
 			return
 		}
 
@@ -264,8 +272,8 @@ func (h *Market) AveragePriceByExchange(w http.ResponseWriter, r *http.Request) 
 
 	result, err := h.market.GetAverage(ctx, exchange, symbol)
 	if err != nil {
-		if errors.Is(err, postgres.ErrNotFound) {
-			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
+		if errors.Is(err, domain.ErrNotFound) {
+			notFoundErrorResponse(w)
 			return
 		}
 

@@ -45,6 +45,10 @@ func internalErrorResponse(w http.ResponseWriter, message any) {
 	errorResponse(w, http.StatusInternalServerError, message)
 }
 
+func notFoundErrorResponse(w http.ResponseWriter) {
+	errorResponse(w, http.StatusNotFound, "requested resource not found")
+}
+
 func parsePeriod(w http.ResponseWriter, r *http.Request, log logger.Logger) (time.Duration, bool) {
 	period := r.URL.Query().Get("period")
 	parsed, err := time.ParseDuration(period)

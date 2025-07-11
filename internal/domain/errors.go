@@ -5,6 +5,7 @@ import (
 )
 
 var (
+	ErrNotFound         = errors.New("resource not found")
 	ErrUnimplemented    = errors.New("unimplemented")
 	ErrInvalidSymbol    = errors.New("invalid symbol")
 	ErrInvalidExchange  = errors.New("invalid exchange")
