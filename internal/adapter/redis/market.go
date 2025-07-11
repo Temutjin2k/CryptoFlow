@@ -63,7 +63,7 @@ func (c *Cache) GetLatest(ctx context.Context, exchange types.Exchange, symbol t
 	return data, nil
 }
 
-func (c *Cache) GetPriceInPeriod(ctx context.Context, exchange, symbol string, period time.Duration) ([]float64, error) {
+func (c *Cache) GetPriceInPeriod(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) ([]float64, error) {
 	key := fmt.Sprintf("history:%s:%s", exchange, symbol)
 	now := time.Now()
 	start := now.Add(-period).UnixMilli()
