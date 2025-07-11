@@ -121,21 +121,3 @@ func (s *Aggregator) aggregateAndStore(ctx context.Context) {
 		s.logger.Error(ctx, "failed to save stats")
 	}
 }
-
-func aggregate(values []float64) (min, max, avg float64) {
-	min, max = values[0], values[0]
-	sum := 0.0
-
-	for _, v := range values {
-		if v < min {
-			min = v
-		}
-		if v > max {
-			max = v
-		}
-		sum += v
-	}
-
-	avg = sum / float64(len(values))
-	return
-}

@@ -63,8 +63,9 @@ func (c *Cache) GetLatest(ctx context.Context, exchange types.Exchange, symbol t
 	return data, nil
 }
 
-func (c *Cache) GetPriceInPeriod(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) ([]float64, error) {
-	key := fmt.Sprintf("history:%s:%s", exchange, symbol)
+func (c *Cache) GetPriceInPeriod(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) ([]*domain.PriceData, error) {
+	key := c.createHistoryKeyByExchangeAndSymbol(exchange, symbol)
+
 	now := time.Now()
 	start := now.Add(-period).UnixMilli()
 
@@ -76,19 +77,22 @@ func (c *Cache) GetPriceInPeriod(ctx context.Context, exchange types.Exchange, s
 	if err != nil {
 		return nil, err
 	}
-	prices := make([]float64, 0, len(values))
+
+	prices := make([]*domain.PriceData, 0, len(values))
 	for _, v := range values {
-		var data domain.PriceData
-		if err := json.Unmarshal([]byte(v), &data); err != nil {
+		data := new(domain.PriceData)
+		if err := json.Unmarshal([]byte(v), data); err != nil {
 			continue // skip bad record
 		}
-		prices = append(prices, data.Price)
+		prices = append(prices, data)
 	}
+
 	return prices, nil
 }
 
 func (c *Cache) StoreHistory(ctx context.Context, p *domain.PriceData) error {
-	key := fmt.Sprintf("history:%s:%s", p.Exchange, p.Symbol)
+	key := c.createHistoryKeyByExchangeAndSymbol(p.Exchange, p.Symbol)
+
 	score := float64(p.Timestamp.UnixMilli())
 	value, err := json.Marshal(p)
 	if err != nil {
@@ -106,7 +110,7 @@ func (c *Cache) DeleteExpiredHistory(ctx context.Context) error {
 	retentionPeriod := c.cfg.HistoryDeleteDuration
 	cutoff := time.Now().Add(-retentionPeriod).UnixMilli()
 
-	// getting all keys by that has history:*
+	// getting all keys that has history:*
 	keys, err := c.client.Keys(ctx, "history:*").Result()
 	if err != nil {
 		return fmt.Errorf("failed to get history keys: %w", err)

@@ -41,7 +41,7 @@ type (
 	}
 
 	Distributor struct {
-		WorkerCount int `env:"DISTRIBUTOR_WORKER_COUNT" default:"1"`
+		WorkerCount int `env:"DISTRIBUTOR_WORKER_COUNT" default:"5"`
 	}
 
 	// Exchanges config

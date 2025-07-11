@@ -11,7 +11,7 @@ import (
 type Cache interface {
 	SetLatest(ctx context.Context, latest *domain.PriceData, duration time.Duration) error
 	GetLatest(ctx context.Context, exchange types.Exchange, symbol types.Symbol) (*domain.PriceData, error)
-	GetPriceInPeriod(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) ([]float64, error)
+	GetPriceInPeriod(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) ([]*domain.PriceData, error)
 	StoreHistory(ctx context.Context, p *domain.PriceData) error
 }
 

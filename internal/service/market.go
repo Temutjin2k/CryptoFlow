@@ -45,14 +45,18 @@ func (s *Market) GetHighest(ctx context.Context, exchange types.Exchange, symbol
 	const fn = "GetHighest"
 	log := s.logger.GetSlogLogger().With("fn", fn, "exchange", exchange, "symbol", symbol)
 
+	if period < time.Minute {
+		return s.fetchHighestFromCache(ctx, exchange, symbol, period)
+	}
+
 	highest, err := s.storage.GetHighestStat(ctx, exchange, symbol, period)
 	if err != nil {
 		log.Error("failed to get stats from database", "error", err)
-		return nil, err
+		return s.fetchHighestFromCache(ctx, exchange, symbol, period)
 	}
 
 	if highest == nil {
-		return nil, domain.ErrNotFound
+		return s.fetchHighestFromCache(ctx, exchange, symbol, period)
 	}
 
 	return &domain.PriceStats{
@@ -63,18 +67,44 @@ func (s *Market) GetHighest(ctx context.Context, exchange types.Exchange, symbol
 	}, nil
 }
 
+func (s *Market) fetchHighestFromCache(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) (*domain.PriceStats, error) {
+	prices, err := s.cache.GetPriceInPeriod(ctx, exchange, symbol, period)
+	if err != nil {
+		s.logger.Error(ctx, "failed to get data from Cache", "exchange", exchange, "symbol", symbol, "period", period, "error", err)
+		return nil, nil
+	}
+
+	_, max, _ := aggregateAndPrice(prices)
+
+	if len(prices) == 0 {
+		s.logger.Warn(ctx, "no prices found in cache")
+		return nil, domain.ErrNotFound
+	}
+
+	return &domain.PriceStats{
+		Exchange:  exchange,
+		Pair:      symbol,
+		Timestamp: max.Timestamp,
+		Max:       max.Price,
+	}, nil
+}
+
 func (s *Market) GetLowest(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) (*domain.PriceStats, error) {
 	const fn = "GetLowest"
 	log := s.logger.GetSlogLogger().With("fn", fn, "exchange", exchange, "symbol", symbol)
 
+	if period < time.Minute {
+		return s.fetchLowestFromCache(ctx, exchange, symbol, period)
+	}
+
 	lowest, err := s.storage.GetLowestStat(ctx, exchange, symbol, period)
 	if err != nil {
 		log.Error("failed to get stats from database", "error", err)
-		return nil, err
+		return s.fetchLowestFromCache(ctx, exchange, symbol, period)
 	}
 
 	if lowest == nil {
-		return nil, domain.ErrNotFound
+		return s.fetchLowestFromCache(ctx, exchange, symbol, period)
 	}
 
 	return &domain.PriceStats{
@@ -85,18 +115,44 @@ func (s *Market) GetLowest(ctx context.Context, exchange types.Exchange, symbol 
 	}, nil
 }
 
+func (s *Market) fetchLowestFromCache(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) (*domain.PriceStats, error) {
+	prices, err := s.cache.GetPriceInPeriod(ctx, exchange, symbol, period)
+	if err != nil {
+		s.logger.Error(ctx, "failed to get data from Cache", "exchange", exchange, "symbol", symbol, "period", period, "error", err)
+		return nil, nil
+	}
+
+	if len(prices) == 0 {
+		s.logger.Warn(ctx, "no prices found in cache")
+		return nil, domain.ErrNotFound
+	}
+
+	min, _, _ := aggregateAndPrice(prices)
+
+	return &domain.PriceStats{
+		Exchange:  exchange,
+		Pair:      symbol,
+		Timestamp: min.Timestamp,
+		Max:       min.Price,
+	}, nil
+}
+
 func (s *Market) GetAverage(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) (*domain.PriceStats, error) {
 	const fn = "GetAverage"
 	log := s.logger.GetSlogLogger().With("fn", fn, "exchange", exchange, "symbol", symbol)
 
+	if period < time.Minute {
+		return s.fetchAverageFromCache(ctx, exchange, symbol, period)
+	}
+
 	avg, err := s.storage.GetAverageStat(ctx, exchange, symbol, period)
 	if err != nil {
-		log.Error("failed to get stats from database", "error", err)
-		return nil, err
+		log.Error("failed to get stats from database, trying to check from cache...", "error", err)
+		return s.fetchAverageFromCache(ctx, exchange, symbol, period)
 	}
 
 	if avg == nil {
-		return nil, domain.ErrNotFound
+		return s.fetchAverageFromCache(ctx, exchange, symbol, period)
 	}
 
 	return &domain.PriceStats{
@@ -104,5 +160,27 @@ func (s *Market) GetAverage(ctx context.Context, exchange types.Exchange, symbol
 		Pair:      avg.Pair,
 		Timestamp: avg.Timestamp,
 		Average:   avg.Average,
+	}, nil
+}
+
+func (s *Market) fetchAverageFromCache(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) (*domain.PriceStats, error) {
+	prices, err := s.cache.GetPriceInPeriod(ctx, exchange, symbol, period)
+	if err != nil {
+		s.logger.Error(ctx, "failed to get data from Cache", "exchange", exchange, "symbol", symbol, "period", period, "error", err)
+		return nil, nil
+	}
+
+	if len(prices) == 0 {
+		s.logger.Warn(ctx, "no prices found in cache")
+		return nil, domain.ErrNotFound
+	}
+
+	_, _, avg := aggregateAndPrice(prices)
+
+	return &domain.PriceStats{
+		Exchange:  exchange,
+		Pair:      symbol,
+		Timestamp: avg.Timestamp,
+		Max:       avg.Price,
 	}, nil
 }
