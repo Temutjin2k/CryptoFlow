@@ -48,15 +48,19 @@ func notFoundErrorResponse(w http.ResponseWriter) {
 	errorResponse(w, http.StatusNotFound, "requested resource not found")
 }
 
-func parsePeriod(period string) (time.Duration, error) {
-	parsed, err := time.ParseDuration(period)
-	if err != nil {
-		return -1, err
+func parsePeriod(period string) (time.Duration, string, error) {
+	if period == "" {
+		period = "1m"
 	}
 
-	// If less or equal 0
-	if parsed <= 0 {
-		return -1, errors.New("invalid period format. should be postivie non-zero value(e.g 1s, 5s, 1m, 3m)")
+	parsed, err := time.ParseDuration(period)
+	if err != nil {
+		return -1, "", err
 	}
-	return parsed, nil
+
+	if parsed <= 0 {
+		return -1, "", errors.New("invalid period format. should be positive non-zero value (e.g. 1s, 5s, 1m, 3m)")
+	}
+
+	return parsed, period, nil
 }
