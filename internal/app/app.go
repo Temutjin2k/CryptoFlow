@@ -21,16 +21,12 @@ import (
 
 const serviceName = "marketflow"
 
-type ExchangeManager interface {
-	Start(ctx context.Context) error
-	Close() error
-}
-
 type App struct {
 	httpServer      *httpserver.API
 	postgresDB      *postgres.PostgreDB
 	redis           *redis.Cache
-	exchangeManager ExchangeManager
+	exchangeManager ports.ExchangeManager
+	scheduler       ports.Sheduler
 
 	log logger.Logger
 }
@@ -76,13 +72,16 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 	market := service.NewMarket(repo, cache, logger)
 
 	// Aggregator
-	aggregator := service.NewAggregator(market)
+	aggregator := service.NewAggregator(repo, cache, config.DataManager.Aggregator.TickerDuration, logger)
 
 	// DataCollector
 	collector := service.NewCollector(cache, nil, logger)
 
 	// ExchangeManager
 	exchangeManager := service.NewExchangeManager(sources, collector, aggregator, config.DataManager.Distributor.WorkerCount, logger)
+
+	scheduler := service.NewScheduler(ctx, logger)
+	scheduler.AddTask("Delete expired exchange history", types.TaskTypeInterval, config.Redis.HistoryDeleteDuration, cache.DeleteExpiredHistory)
 
 	// List of all services for healthcheck
 	serviceList := []httpserver.Service{
@@ -101,26 +100,30 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 		postgresDB:      db,
 		exchangeManager: exchangeManager,
 		redis:           cache,
+		scheduler:       scheduler,
 		log:             logger,
 	}
 	return app, nil
 }
 
 func (app *App) close(ctx context.Context) {
+	app.scheduler.Close()
+
+	// Closing http server
+	if err := app.httpServer.Stop(); err != nil {
+		app.log.Warn(ctx, "failed to shutdown HTTP service", "error", err)
+	}
+
+	if err := app.exchangeManager.Close(); err != nil {
+		app.log.Warn(ctx, "failed to shutdown exchange manager", "error", err)
+	}
+
 	// Closing database connection
 	app.postgresDB.Pool.Close()
 
 	// Closing redis
 	app.redis.Close()
 
-	if err := app.exchangeManager.Close(); err != nil {
-		app.log.Warn(ctx, "failed to shutdown exchange manager", "error", err)
-	}
-
-	// Closing http server
-	if err := app.httpServer.Stop(); err != nil {
-		app.log.Warn(ctx, "failed to shutdown HTTP service", "error", err)
-	}
 }
 
 func (app *App) Run() error {
@@ -129,7 +132,6 @@ func (app *App) Run() error {
 
 	errCh := make(chan error, 1)
 	ctx := context.Background()
-
 	// Running DataManager
 	if err := app.exchangeManager.Start(ctx); err != nil {
 		log.Error("failed to start exchange manager", "error", err)
@@ -138,6 +140,9 @@ func (app *App) Run() error {
 
 	// Running http server
 	app.httpServer.Run(errCh)
+
+	// Running scheduler
+	app.scheduler.Start()
 
 	log.InfoContext(ctx, "application started", "name", serviceName)
 

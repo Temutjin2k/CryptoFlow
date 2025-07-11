@@ -90,10 +90,34 @@ func (c *Cache) GetPriceInPeriod(ctx context.Context, exchange types.Exchange, s
 func (c *Cache) StoreHistory(ctx context.Context, p *domain.PriceData) error {
 	key := fmt.Sprintf("history:%s:%s", p.Exchange, p.Symbol)
 	score := float64(p.Timestamp.UnixMilli())
-	value, _ := json.Marshal(p)
+	value, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Errorf("failed to marshal PriceData: %w", err)
+	}
 
 	return c.client.ZAdd(ctx, key, goredis.Z{
 		Score:  score,
 		Member: value,
 	}).Err()
+}
+
+// DeleteExpiredHistory deletes keys in history.* sorted sets that older than 5 minutes
+func (c *Cache) DeleteExpiredHistory(ctx context.Context) error {
+	retentionPeriod := c.cfg.HistoryDeleteDuration
+	cutoff := time.Now().Add(-retentionPeriod).UnixMilli()
+
+	// getting all keys by that has history:*
+	keys, err := c.client.Keys(ctx, "history:*").Result()
+	if err != nil {
+		return fmt.Errorf("failed to get history keys: %w", err)
+	}
+
+	for _, key := range keys {
+		err := c.client.ZRemRangeByScore(ctx, key, "0", fmt.Sprintf("%d", cutoff)).Err()
+		if err != nil {
+			continue
+		}
+	}
+
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"time"
 )
 
 // Parse fills in the struct from environment variables and default values
@@ -48,6 +49,15 @@ func parseStruct(rv reflect.Value) error {
 
 		if !field.CanSet() {
 			return fmt.Errorf("cannot set field %s", fieldType.Name)
+		}
+
+		if fieldType.Type == reflect.TypeOf(time.Duration(0)) {
+			dur, err := time.ParseDuration(val)
+			if err != nil {
+				return fmt.Errorf("failed to parse duration for %s: %v", envTag, err)
+			}
+			field.Set(reflect.ValueOf(dur))
+			continue
 		}
 
 		switch field.Kind() {

@@ -78,7 +78,7 @@ func (wp *WorkerPool) processPriceData(data *domain.PriceData) (*domain.PriceDat
 		return nil, err
 	}
 	if !ok {
-		return nil, errors.New("failed")
+		return nil, errors.New("invalid price data")
 	}
 
 	// Return the processed data (unchanged in this example)

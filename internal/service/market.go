@@ -40,47 +40,6 @@ func (s *Market) GetLatest(ctx context.Context, exchange types.Exchange, symbol 
 	return latest, nil
 }
 
-// AggregateAndStore gets aggregated data and sends it to database
-func (s *Market) AggregateAndStore(ctx context.Context) {
-	s.logger.Info(ctx, "Running AggregateAndStore")
-	exchanges := types.ValidExchanges
-	symbols := types.ValidSymbols
-
-	for _, exchange := range exchanges {
-		for _, symbol := range symbols {
-			values, err := s.cache.GetPriceInPeriod(ctx, exchange, symbol, time.Minute)
-			if len(values) == 0 {
-				s.logger.Warn(ctx, "No prices found wait for 1 minute", "exchange", exchange, "symbol", symbol, "len", len(values), "err", err)
-				continue
-			}
-			if err != nil {
-				s.logger.Error(ctx, "failed to get prices from cache", "exchange", exchange, "symbol", symbol, "error", err)
-				continue
-			}
-
-			min, max, avg := aggregate(values)
-
-			stat := &domain.PriceStats{
-				Exchange:  string(exchange),
-				Pair:      string(symbol),
-				Timestamp: time.Now().Truncate(time.Minute),
-				Average:   avg,
-				Min:       min,
-				Max:       max,
-			}
-
-			//to prevent race condition
-			// s.mu.Lock()
-			err = s.storage.StoreStats(ctx, stat)
-			// s.mu.Unlock()
-
-			if err != nil {
-				s.logger.Error(ctx, "failed to save stat", "exchange", exchange, "symbol", symbol, "error", err)
-			}
-		}
-	}
-}
-
 func (s *Market) GetHighest(ctx context.Context, exchange, symbol string, period time.Duration) (*domain.PriceStats, error) {
 	const fn = "GetHighest"
 	log := s.logger.GetSlogLogger().With("fn", fn, "exchange", exchange, "symbol", symbol)
@@ -174,22 +133,4 @@ func (s *Market) GetAverage(ctx context.Context, exchange, symbol string) (*doma
 		Timestamp: avg.Timestamp,
 		Average:   avg.Average,
 	}, nil
-}
-
-func aggregate(values []float64) (min, max, avg float64) {
-	min, max = values[0], values[0]
-	sum := 0.0
-
-	for _, v := range values {
-		if v < min {
-			min = v
-		}
-		if v > max {
-			max = v
-		}
-		sum += v
-	}
-
-	avg = sum / float64(len(values))
-	return
 }

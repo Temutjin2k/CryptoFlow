@@ -6,7 +6,6 @@ import (
 	"marketflow/internal/domain"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
-	"sync"
 )
 
 // ExchangeManager manages all working process related to exchanges
@@ -55,10 +54,13 @@ func (m *ExchangeManager) Start(ctx context.Context) error {
 		distributor.FanOut(ctx)
 	}
 
-	m.aggregator.FanIn(ctx, m.getWorkerPoolOutputs()...)
+	merged := m.aggregator.FanIn(ctx, m.getWorkerPoolOutputs()...)
 
-	merged := mergeChannels(ctx, m.getWorkerPoolOutputs()...)
+	// starting collector
 	m.collector.Start(ctx, merged)
+
+	// starting aggregator
+	m.aggregator.Start(ctx)
 
 	return nil
 }
@@ -90,30 +92,4 @@ func (m *ExchangeManager) getWorkerPoolOutputs() []<-chan *domain.PriceData {
 		chans = append(chans, pool.Output())
 	}
 	return chans
-}
-
-func mergeChannels(ctx context.Context, chans ...<-chan *domain.PriceData) <-chan *domain.PriceData {
-	out := make(chan *domain.PriceData)
-	var wg sync.WaitGroup
-
-	for _, ch := range chans {
-		wg.Add(1)
-		go func(c <-chan *domain.PriceData) {
-			defer wg.Done()
-			for val := range c {
-				select {
-				case out <- val:
-				case <-ctx.Done():
-					return
-				}
-			}
-		}(ch)
-	}
-
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-
-	return out
 }

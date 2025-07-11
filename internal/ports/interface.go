@@ -15,9 +15,14 @@ type Cache interface {
 	StoreHistory(ctx context.Context, p *domain.PriceData) error
 }
 
+type ExchangeManager interface {
+	Start(ctx context.Context) error
+	Close() error
+}
+
 // postgres
 type MarketRepository interface {
-	StoreStats(ctx context.Context, stat *domain.PriceStats) error
+	StoreStats(ctx context.Context, stat []*domain.PriceStats) error
 	GetStats(ctx context.Context, pair, exchange string, since time.Time) ([]*domain.PriceStats, error)
 	GetAverageStat(ctx context.Context, pair, exchange string) (*domain.PriceStats, error)
 }
@@ -41,12 +46,19 @@ type WorkerPool interface {
 }
 
 type Aggregator interface {
-	FanIn(ctx context.Context, inputs ...<-chan *domain.PriceData)
+	Start(ctx context.Context)
+	FanIn(ctx context.Context, inputs ...<-chan *domain.PriceData) <-chan *domain.PriceData
 }
 
 type Collector interface {
 	Start(ctx context.Context, processedPrices <-chan *domain.PriceData)
 	Cancel() error
+}
+
+type Sheduler interface {
+	Start()
+	Close()
+	AddTask(name string, taskType types.TaskType, interval time.Duration, handler func(ctx context.Context) error)
 }
 
 // Service

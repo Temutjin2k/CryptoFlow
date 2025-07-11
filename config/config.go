@@ -5,6 +5,7 @@ import (
 	"marketflow/pkg/envcfg"
 	"marketflow/pkg/loadenv"
 	"marketflow/pkg/postgres"
+	"time"
 )
 
 type (
@@ -29,11 +30,14 @@ type (
 	Redis struct {
 		Addr     string `env:"REDIS_ADDR"`
 		Password string `env:"REDIS_PASSWORD"`
+
+		HistoryDeleteDuration time.Duration `env:"REDIS_HISTORY_DELETE_DURATION" default:"5m"`
 	}
 
 	DataManager struct {
 		Exchanges   Exchanges
 		Distributor Distributor
+		Aggregator  Aggregator
 	}
 
 	Distributor struct {
@@ -50,6 +54,10 @@ type (
 
 		Exchange3Addr string `env:"EXCHANGE3_ADDR" default:"localhost:40103"`
 		// Exchange3_Name string `env:"EXCHANGE3_NAME" default:"exchange3"`
+	}
+
+	Aggregator struct {
+		TickerDuration time.Duration `env:"AGGREGATOR_TICKER_DURATION" default:"1m"`
 	}
 )
 
