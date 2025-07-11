@@ -48,7 +48,7 @@ func (s *Market) AggregateAndStore(ctx context.Context) {
 
 	for _, exchange := range exchanges {
 		for _, symbol := range symbols {
-			values, err := s.cache.GetPriceInPeriod(ctx, string(exchange), string(symbol), time.Minute)
+			values, err := s.cache.GetPriceInPeriod(ctx, exchange, symbol, time.Minute)
 			if len(values) == 0 {
 				s.logger.Warn(ctx, "No prices found wait for 1 minute", "exchange", exchange, "symbol", symbol, "len", len(values), "err", err)
 				continue
