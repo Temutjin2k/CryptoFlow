@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"maps"
-	"marketflow/pkg/logger"
 	"net/http"
 	"time"
 )
@@ -49,13 +48,15 @@ func notFoundErrorResponse(w http.ResponseWriter) {
 	errorResponse(w, http.StatusNotFound, "requested resource not found")
 }
 
-func parsePeriod(w http.ResponseWriter, r *http.Request, log logger.Logger) (time.Duration, bool) {
-	period := r.URL.Query().Get("period")
+func parsePeriod(period string) (time.Duration, error) {
 	parsed, err := time.ParseDuration(period)
 	if err != nil {
-		log.Error(r.Context(), "invalid period format", "error", err)
-		errorResponse(w, http.StatusBadRequest, "invalid period format")
-		return 0, false
+		return -1, err
 	}
-	return parsed, true
+
+	// If less or equal 0
+	if parsed <= 0 {
+		return -1, errors.New("invalid period format. should be postivie non-zero value(e.g 1s, 5s, 1m, 3m)")
+	}
+	return parsed, nil
 }

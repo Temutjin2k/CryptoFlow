@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"marketflow/internal/domain"
 	"marketflow/internal/domain/types"
+	"sort"
 	"time"
 
 	goredis "github.com/redis/go-redis/v9"
@@ -64,45 +65,71 @@ func (c *Cache) GetLatest(ctx context.Context, exchange types.Exchange, symbol t
 }
 
 func (c *Cache) GetPriceInPeriod(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) ([]*domain.PriceData, error) {
-	key := c.createHistoryKeyByExchangeAndSymbol(exchange, symbol)
-
 	now := time.Now()
 	start := now.Add(-period).UnixMilli()
+	end := now.UnixMilli()
 
+	// Determine which key to query based on exchange type
+	var key string
+	if exchange == types.AllExchanges {
+		key = c.createHistoryKeyBySymbol(symbol) // Use combined symbol key
+	} else {
+		key = c.createHistoryKeyByExchangeAndSymbol(exchange, symbol) // Use exchange-specific key
+	}
+
+	// Execute Redis query
 	values, err := c.client.ZRangeByScore(ctx, key, &goredis.ZRangeBy{
 		Min: fmt.Sprintf("%d", start),
-		Max: fmt.Sprintf("%d", now.UnixMilli()),
+		Max: fmt.Sprintf("%d", end),
 	}).Result()
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("redis query failed for key %s: %w", key, err)
 	}
 
 	prices := make([]*domain.PriceData, 0, len(values))
 	for _, v := range values {
 		data := new(domain.PriceData)
 		if err := json.Unmarshal([]byte(v), data); err != nil {
-			continue // skip bad record
+			continue // skip corrupted entries (consider logging this)
 		}
 		prices = append(prices, data)
 	}
 
+	sort.Slice(prices, func(i, j int) bool {
+		return prices[i].Timestamp.Before(prices[j].Timestamp)
+	})
+
 	return prices, nil
 }
 
+// StoreHistory saves price data to Redis in both exchange-specific and symbol-only sorted sets
 func (c *Cache) StoreHistory(ctx context.Context, p *domain.PriceData) error {
-	key := c.createHistoryKeyByExchangeAndSymbol(p.Exchange, p.Symbol)
-
-	score := float64(p.Timestamp.UnixMilli())
 	value, err := json.Marshal(p)
 	if err != nil {
 		return fmt.Errorf("failed to marshal PriceData: %w", err)
 	}
+	score := float64(p.Timestamp.UnixMilli())
 
-	return c.client.ZAdd(ctx, key, goredis.Z{
-		Score:  score,
-		Member: value,
-	}).Err()
+	// Create pipeline for atomic operations
+	pipe := c.client.Pipeline()
+
+	// 1. Store in exchange-specific key (history:exchange:symbol)
+	exchangeKey := c.createHistoryKeyByExchangeAndSymbol(p.Exchange, p.Symbol)
+	pipe.ZAdd(ctx, exchangeKey, goredis.Z{Score: score, Member: value})
+
+	// 2. Store in symbol-only key (history:symbol) for AllExchanges queries
+	symbolKey := c.createHistoryKeyBySymbol(p.Symbol)
+	pipe.ZAdd(ctx, symbolKey, goredis.Z{Score: score, Member: value})
+
+	pipe.Expire(ctx, exchangeKey, time.Hour)
+	pipe.Expire(ctx, symbolKey, time.Hour)
+
+	// Execute all operations atomically
+	if _, err := pipe.Exec(ctx); err != nil {
+		return fmt.Errorf("redis pipeline failed: %w", err)
+	}
+
+	return nil
 }
 
 // DeleteExpiredHistory deletes keys in history.* sorted sets that older than 5 minutes

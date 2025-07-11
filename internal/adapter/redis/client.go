@@ -89,3 +89,7 @@ func (c *Cache) createKeyBySymbol(symbol types.Symbol) string {
 func (c *Cache) createHistoryKeyByExchangeAndSymbol(exchange types.Exchange, symbol types.Symbol) string {
 	return fmt.Sprintf("history:%s:%s", exchange, symbol)
 }
+
+func (c *Cache) createHistoryKeyBySymbol(symbol types.Symbol) string {
+	return fmt.Sprintf("history:%s", symbol)
+}

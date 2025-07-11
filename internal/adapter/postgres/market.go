@@ -45,7 +45,6 @@ func (r *MarketRepo) StoreStats(ctx context.Context, stats []*domain.PriceStats)
 	br := r.db.SendBatch(ctx, batch)
 	defer br.Close()
 
-	// Обрабатываем все ответы от batched-инсертов
 	for range stats {
 		if _, err := br.Exec(); err != nil {
 			return ErrQueryFailed
@@ -55,9 +54,39 @@ func (r *MarketRepo) StoreStats(ctx context.Context, stats []*domain.PriceStats)
 	return nil
 }
 
-// GetHighestStat returns highest price accross exchanges in given period
+// GetHighestStat returns highest price across exchanges in given period
 func (r *MarketRepo) GetHighestStat(ctx context.Context, exchange types.Exchange, pair types.Symbol, period time.Duration) (*domain.PriceStats, error) {
-	query, args := buildStatsQuery("max_price", exchange, pair, period)
+	timeThreshold := time.Now().Add(-period)
+
+	var query string
+	var args []any
+
+	if exchange == types.AllExchanges {
+		query = `
+            SELECT 
+                $1::text as pair_name,
+                'ALL' as exchange,
+                MAX(max_price) as max_price,
+                MAX(timestamp) as timestamp
+            FROM aggregated_prices
+            WHERE pair_name = $1
+            AND timestamp >= $2`
+		args = []any{pair, timeThreshold}
+	} else {
+		query = `
+            SELECT 
+                $1::text as pair_name,
+                $2::text as exchange,
+                max_price,
+                timestamp
+            FROM aggregated_prices
+            WHERE pair_name = $1
+            AND exchange = $2
+            AND timestamp >= $3
+            ORDER BY max_price DESC
+            LIMIT 1`
+		args = []any{pair, exchange, timeThreshold}
+	}
 
 	var stats domain.PriceStats
 	err := r.db.QueryRow(ctx, query, args...).Scan(
@@ -66,6 +95,7 @@ func (r *MarketRepo) GetHighestStat(ctx context.Context, exchange types.Exchange
 		&stats.Max,
 		&stats.Timestamp,
 	)
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -76,9 +106,39 @@ func (r *MarketRepo) GetHighestStat(ctx context.Context, exchange types.Exchange
 	return &stats, nil
 }
 
-// GetLowestStat returns lowest price accross exchanges in given period
+// GetLowestStat returns lowest price across exchanges in given period
 func (r *MarketRepo) GetLowestStat(ctx context.Context, exchange types.Exchange, pair types.Symbol, period time.Duration) (*domain.PriceStats, error) {
-	query, args := buildStatsQuery("min_price", exchange, pair, period)
+	timeThreshold := time.Now().Add(-period)
+
+	var query string
+	var args []any
+
+	if exchange == types.AllExchanges {
+		query = `
+            SELECT 
+                $1::text as pair_name,
+                'ALL' as exchange,
+                MIN(min_price) as min_price,
+                MAX(timestamp) as timestamp
+            FROM aggregated_prices
+            WHERE pair_name = $1
+            AND timestamp >= $2`
+		args = []any{pair, timeThreshold}
+	} else {
+		query = `
+            SELECT 
+                $1::text as pair_name,
+                $2::text as exchange,
+                min_price,
+                timestamp
+            FROM aggregated_prices
+            WHERE pair_name = $1
+            AND exchange = $2
+            AND timestamp >= $3
+            ORDER BY min_price ASC
+            LIMIT 1`
+		args = []any{pair, exchange, timeThreshold}
+	}
 
 	var stats domain.PriceStats
 	err := r.db.QueryRow(ctx, query, args...).Scan(
@@ -87,6 +147,7 @@ func (r *MarketRepo) GetLowestStat(ctx context.Context, exchange types.Exchange,
 		&stats.Min,
 		&stats.Timestamp,
 	)
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -145,33 +206,4 @@ func (r *MarketRepo) GetAverageStat(ctx context.Context, exchange types.Exchange
 	}
 
 	return &stats, nil
-}
-func buildStatsQuery(priceField string, exchange types.Exchange, pair types.Symbol, period time.Duration) (string, []any) {
-	timeThreshold := time.Now().Add(-period)
-
-	var query string
-	var args []any
-
-	if exchange == types.AllExchanges {
-		query = fmt.Sprintf(`
-			SELECT pair_name, exchange, %s, timestamp
-			FROM aggregated_prices
-			WHERE pair_name = $1 
-			AND timestamp >= $2
-			ORDER BY %s DESC
-			LIMIT 1`, priceField, priceField)
-		args = []any{pair, timeThreshold}
-	} else {
-		query = fmt.Sprintf(`
-			SELECT pair_name, exchange, %s, timestamp
-			FROM aggregated_prices
-			WHERE pair_name = $1 
-			AND exchange = $2
-			AND timestamp >= $3
-			ORDER BY %s DESC
-			LIMIT 1`, priceField, priceField)
-		args = []any{pair, exchange, timeThreshold}
-	}
-
-	return query, args
 }
