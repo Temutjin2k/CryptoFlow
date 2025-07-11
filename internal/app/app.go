@@ -4,6 +4,7 @@ import (
 	"marketflow/config"
 	"marketflow/internal/adapter/exchange"
 	httpserver "marketflow/internal/adapter/http/server"
+	repo "marketflow/internal/adapter/postgres"
 	"marketflow/internal/adapter/redis"
 	"marketflow/internal/domain/types"
 	"marketflow/internal/ports"
@@ -68,17 +69,20 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 		exchange3,
 	}
 
+	//repository
+	repo := repo.NewMarketRepository(db.Pool)
+
+	// Market service
+	market := service.NewMarket(repo, cache, logger)
+
 	// Aggregator
-	aggregator := service.NewAggregator()
+	aggregator := service.NewAggregator(market)
 
 	// DataCollector
 	collector := service.NewCollector(cache, nil, logger)
 
 	// ExchangeManager
 	exchangeManager := service.NewExchangeManager(sources, collector, aggregator, config.DataManager.Distributor.WorkerCount, logger)
-
-	// Market service
-	market := service.NewMarket(nil, cache, logger)
 
 	// List of all services for healthcheck
 	serviceList := []httpserver.Service{

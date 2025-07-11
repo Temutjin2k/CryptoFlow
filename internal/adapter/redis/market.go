@@ -62,3 +62,38 @@ func (c *Cache) GetLatest(ctx context.Context, exchange types.Exchange, symbol t
 
 	return data, nil
 }
+
+func (c *Cache) GetPriceInPeriod(ctx context.Context, exchange types.Exchange, symbol types.Symbol, period time.Duration) ([]float64, error) {
+	key := fmt.Sprintf("history:%s:%s", exchange, symbol)
+	now := time.Now()
+	start := now.Add(-period).UnixMilli()
+
+	values, err := c.client.ZRangeByScore(ctx, key, &goredis.ZRangeBy{
+		Min: fmt.Sprintf("%d", start),
+		Max: fmt.Sprintf("%d", now.UnixMilli()),
+	}).Result()
+
+	if err != nil {
+		return nil, err
+	}
+	prices := make([]float64, 0, len(values))
+	for _, v := range values {
+		var data domain.PriceData
+		if err := json.Unmarshal([]byte(v), &data); err != nil {
+			continue // skip bad record
+		}
+		prices = append(prices, data.Price)
+	}
+	return prices, nil
+}
+
+func (c *Cache) StoreHistory(ctx context.Context, p *domain.PriceData) error {
+	key := fmt.Sprintf("history:%s:%s", p.Exchange, p.Symbol)
+	score := float64(p.Timestamp.UnixMilli())
+	value, _ := json.Marshal(p)
+
+	return c.client.ZAdd(ctx, key, goredis.Z{
+		Score:  score,
+		Member: value,
+	}).Err()
+}

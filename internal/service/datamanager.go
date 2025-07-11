@@ -6,6 +6,7 @@ import (
 	"marketflow/internal/domain"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
+	"sync"
 )
 
 // ExchangeManager manages all working process related to exchanges
@@ -25,7 +26,6 @@ func NewExchangeManager(
 	collector ports.Collector,
 	aggregator ports.Aggregator,
 	workerCount int,
-
 	logger logger.Logger,
 ) *ExchangeManager {
 	return &ExchangeManager{
@@ -37,10 +37,9 @@ func NewExchangeManager(
 	}
 }
 
-// Start
 func (m *ExchangeManager) Start(ctx context.Context) error {
-	// Iterating accross exchanges and starting sources.
 	for _, source := range m.exchangeSources {
+		m.logger.Info(ctx, "starting source", "name", source.Name())
 		pricesCh, err := source.Start(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to start source: %w", err)
@@ -52,17 +51,14 @@ func (m *ExchangeManager) Start(ctx context.Context) error {
 		distributor := NewDistriubtor(workerPool, pricesCh)
 		m.distributors = append(m.distributors, distributor)
 
-		// starting worker pools.
 		workerPool.Start(ctx)
-		//starting distributor.
 		distributor.FanOut(ctx)
 	}
 
-	m.aggregator.FanIn(m.getWorkerPoolOutputs()...)
+	m.aggregator.FanIn(ctx, m.getWorkerPoolOutputs()...)
 
-	resultch := m.aggregator.Input()
-
-	m.collector.Start(ctx, resultch)
+	merged := mergeChannels(ctx, m.getWorkerPoolOutputs()...)
+	m.collector.Start(ctx, merged)
 
 	return nil
 }
@@ -71,21 +67,16 @@ func (m *ExchangeManager) Close() error {
 	const fn = "ExchangeManager.Close"
 	log := m.logger.GetSlogLogger().With("fn", fn)
 
-	// Closing the exchange sources.
 	for _, source := range m.exchangeSources {
 		if err := source.Close(); err != nil {
 			log.Warn("failed to close exchange", "error", err)
 		}
 	}
 
-	// TODO: maybe close aggregator, but not sure.
-
-	// Closing collector
 	if err := m.collector.Cancel(); err != nil {
 		log.Warn("failed to cancel collector", "error", err)
 	}
 
-	// Closing the workerPools
 	for _, pool := range m.workerPools {
 		pool.Close()
 	}
@@ -98,6 +89,31 @@ func (m *ExchangeManager) getWorkerPoolOutputs() []<-chan *domain.PriceData {
 	for _, pool := range m.workerPools {
 		chans = append(chans, pool.Output())
 	}
-
 	return chans
+}
+
+func mergeChannels(ctx context.Context, chans ...<-chan *domain.PriceData) <-chan *domain.PriceData {
+	out := make(chan *domain.PriceData)
+	var wg sync.WaitGroup
+
+	for _, ch := range chans {
+		wg.Add(1)
+		go func(c <-chan *domain.PriceData) {
+			defer wg.Done()
+			for val := range c {
+				select {
+				case out <- val:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}(ch)
+	}
+
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+
+	return out
 }

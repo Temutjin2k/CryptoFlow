@@ -5,8 +5,7 @@ import (
 )
 
 var (
-	ErrUnimplemented = errors.New("unimplemented")
-
+	ErrUnimplemented    = errors.New("unimplemented")
 	ErrInvalidSymbol    = errors.New("invalid symbol")
 	ErrInvalidExchange  = errors.New("invalid exchange")
 	ErrNegativePrice    = errors.New("price cannot be negative")
