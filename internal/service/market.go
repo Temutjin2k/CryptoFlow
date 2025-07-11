@@ -43,12 +43,12 @@ func (s *Market) GetLatest(ctx context.Context, exchange types.Exchange, symbol 
 // AggregateAndStore gets aggregated data and sends it to database
 func (s *Market) AggregateAndStore(ctx context.Context) {
 	s.logger.Info(ctx, "Running AggregateAndStore")
-	exchanges := []string{"exchange1", "exchange2", "exchange3"}
-	symbols := []string{"BTCUSDT", "DOGEUSDT", "TONUSDT", "SOLUSDT", "ETHUSDT"}
+	exchanges := types.ValidExchanges
+	symbols := types.ValidSymbols
 
 	for _, exchange := range exchanges {
 		for _, symbol := range symbols {
-			values, err := s.cache.GetPriceInPeriod(ctx, exchange, symbol, time.Minute)
+			values, err := s.cache.GetPriceInPeriod(ctx, string(exchange), string(symbol), time.Minute)
 			if len(values) == 0 {
 				s.logger.Warn(ctx, "No prices found wait for 1 minute", "exchange", exchange, "symbol", symbol, "len", len(values), "err", err)
 				continue
@@ -61,8 +61,8 @@ func (s *Market) AggregateAndStore(ctx context.Context) {
 			min, max, avg := aggregate(values)
 
 			stat := &domain.PriceStats{
-				Exchange:  exchange,
-				Pair:      symbol,
+				Exchange:  string(exchange),
+				Pair:      string(symbol),
 				Timestamp: time.Now().Truncate(time.Minute),
 				Average:   avg,
 				Min:       min,

@@ -67,6 +67,10 @@ func (c *Collector) run(ctx context.Context, processedPrices <-chan *domain.Pric
 				log.Error("cache store failed", "error", err)
 			}
 
+			if err := c.cache.StoreHistory(ctx, price); err != nil {
+				log.Error("history store failed", "error", err)
+			}
+
 		case <-ticker.C:
 			// log.Info("processing status",
 			// 	"total_processed", count,

@@ -86,3 +86,14 @@ func (c *Cache) GetPriceInPeriod(ctx context.Context, exchange, symbol string, p
 	}
 	return prices, nil
 }
+
+func (c *Cache) StoreHistory(ctx context.Context, p *domain.PriceData) error {
+	key := fmt.Sprintf("history:%s:%s", p.Exchange, p.Symbol)
+	score := float64(p.Timestamp.UnixMilli())
+	value, _ := json.Marshal(p)
+
+	return c.client.ZAdd(ctx, key, goredis.Z{
+		Score:  score,
+		Member: value,
+	}).Err()
+}

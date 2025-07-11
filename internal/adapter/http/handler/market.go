@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"marketflow/internal/adapter/postgres"
 	"marketflow/internal/domain/types"
@@ -9,7 +8,6 @@ import (
 	"marketflow/pkg/logger"
 	"marketflow/pkg/validator"
 	"net/http"
-	"time"
 )
 
 type Market struct {
@@ -48,12 +46,7 @@ func (h *Market) LatestPrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		log.Error("failed to encode json", "err", err)
-		internalErrorResponse(w, "failed to encode json")
-		return
-	}
+	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
 }
 
 // LatestPriceByExchange returns latest price for a specific exchange
@@ -63,7 +56,7 @@ func (h *Market) LatestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 	exchange := r.PathValue("exchange")
 	symbol := r.PathValue("symbol")
 
-	log := h.log.GetSlogLogger().With("symbol", symbol)
+	log := h.log.GetSlogLogger().With("symbol", symbol, "exchange", exchange)
 
 	v := validator.New()
 
@@ -83,12 +76,7 @@ func (h *Market) LatestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		log.Error("failed to encode json", "err", err)
-		internalErrorResponse(w, "failed to encode json")
-		return
-	}
+	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
 }
 
 // HIGHEST
@@ -97,33 +85,33 @@ func (h *Market) LatestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 func (h *Market) HighestPrice(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	symbol := r.PathValue("symbol")
-	period := r.URL.Query().Get("period")
-	periodParsed, err := time.ParseDuration(period)
-	if err != nil {
-		h.log.Error(ctx, "failed to parse period, invalid format", "error", err)
-		http.Error(w, "invalid period format", http.StatusBadRequest)
+
+	log := h.log.GetSlogLogger().With("symbol", symbol)
+
+	v := validator.New()
+	if validateSymbol(v, symbol); !v.Valid() {
+		log.Error("failed to validate request", "errors", v.Errors)
+		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
+		return
+	}
+
+	periodParsed, ok := parsePeriod(w, r, h.log)
+	if !ok {
 		return
 	}
 
 	result, err := h.market.GetHighest(ctx, "", symbol, periodParsed)
-
 	if err != nil {
 		if errors.Is(err, postgres.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"message": "no data yet, wait at least 1 minute"})
+			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
 			return
 		}
-
-		h.log.Error(ctx, "failed to fetch data", "error", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.log.Error(ctx, "failed to fetch highest price", "error", err)
+		internalErrorResponse(w, "failed to fetch highest price")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		internalErrorResponse(w, "failed to encode json")
-		return
-	}
+	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
 }
 
 // HighestPriceByExchange returns highest price for a sprcific exchange
@@ -131,11 +119,17 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 	exchange := r.PathValue("exchange")
 	symbol := r.PathValue("symbol")
-	period := r.URL.Query().Get("period")
-	periodParsed, err := time.ParseDuration(period)
-	if err != nil {
-		h.log.Error(ctx, "failed to parse period, invalid format", "error", err)
-		http.Error(w, "invalid period format", http.StatusBadRequest)
+	log := h.log.GetSlogLogger().With("symbol", symbol, "exchange", exchange)
+
+	v := validator.New()
+	if validateSymbol(v, symbol); !v.Valid() {
+		log.Error("failed to validate request", "errors", v.Errors)
+		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
+		return
+	}
+
+	periodParsed, ok := parsePeriod(w, r, h.log)
+	if !ok {
 		return
 	}
 
@@ -143,21 +137,16 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		if errors.Is(err, postgres.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"message": "no data yet, wait at least 1 minute"})
+			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
 			return
 		}
 
-		h.log.Error(ctx, "failed to fetch data", "error", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.log.Error(ctx, "failed to fetch highest price by exchange", "error", err)
+		internalErrorResponse(w, "failed to fetch highest price by exchange")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		internalErrorResponse(w, "failed to encode json")
-		return
-	}
+	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
 }
 
 // LOWEST
@@ -166,32 +155,33 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 func (h *Market) LowestPrice(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	symbol := r.PathValue("symbol")
-	period := r.URL.Query().Get("period")
-	periodParsed, err := time.ParseDuration(period)
-	if err != nil {
-		h.log.Error(ctx, "failed to parse period, invalid format", "error", err)
-		http.Error(w, "invalid period format", http.StatusBadRequest)
+	log := h.log.GetSlogLogger().With("symbol", symbol)
+
+	v := validator.New()
+	if validateSymbol(v, symbol); !v.Valid() {
+		log.Error("failed to validate request", "errors", v.Errors)
+		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
+		return
+	}
+
+	periodParsed, ok := parsePeriod(w, r, h.log)
+	if !ok {
 		return
 	}
 
 	result, err := h.market.GetLowest(ctx, "", symbol, periodParsed)
 	if err != nil {
 		if errors.Is(err, postgres.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"message": "no data yet, wait at least 1 minute"})
+			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
 			return
 		}
 
-		h.log.Error(ctx, "failed to fetch data", "error", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.log.Error(ctx, "failed to fetch lowest price", "error", err)
+		internalErrorResponse(w, "failed to fetch lowest price")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		internalErrorResponse(w, "failed to encode json")
-		return
-	}
+	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
 }
 
 // LowestPriceByExchange returns lowest price for a specific exchange
@@ -199,33 +189,33 @@ func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	exchange := r.PathValue("exchange")
 	symbol := r.PathValue("symbol")
-	period := r.URL.Query().Get("period")
-	periodParsed, err := time.ParseDuration(period)
+	log := h.log.GetSlogLogger().With("symbol", symbol, "exchange", exchange)
 
-	if err != nil {
-		h.log.Error(ctx, "failed to parse period, invalid format", "error", err)
-		http.Error(w, "invalid period format", http.StatusBadRequest)
+	v := validator.New()
+	if validateSymbol(v, symbol); !v.Valid() {
+		log.Error("failed to validate request", "errors", v.Errors)
+		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
+		return
+	}
+
+	periodParsed, ok := parsePeriod(w, r, h.log)
+	if !ok {
 		return
 	}
 
 	result, err := h.market.GetLowest(ctx, exchange, symbol, periodParsed)
 	if err != nil {
 		if errors.Is(err, postgres.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"message": "no data yet, wait at least 1 minute"})
+			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
 			return
 		}
 
-		h.log.Error(ctx, "failed to fetch data", "error", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.log.Error(ctx, "failed to fetch lowest price by exchange", "error", err)
+		internalErrorResponse(w, "failed to fetch lowest price by exchange")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		internalErrorResponse(w, "failed to encode json")
-		return
-	}
+	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
 }
 
 // AVERAGE
@@ -234,25 +224,28 @@ func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 func (h *Market) AveragePrice(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	symbol := r.PathValue("symbol")
+	log := h.log.GetSlogLogger().With("symbol", symbol)
+
+	v := validator.New()
+	if validateSymbol(v, symbol); !v.Valid() {
+		log.Error("failed to validate request", "errors", v.Errors)
+		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
+		return
+	}
 
 	result, err := h.market.GetAverage(ctx, "", symbol)
 	if err != nil {
 		if errors.Is(err, postgres.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"message": "no data yet, wait at least 1 minute"})
+			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
 			return
 		}
 
-		h.log.Error(ctx, "failed to fetch data", "error", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.log.Error(ctx, "failed to fetch lowest average", "error", err)
+		internalErrorResponse(w, "failed to fetch average price by exchange")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		internalErrorResponse(w, "failed to encode json")
-		return
-	}
+	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
 }
 
 // AveragePriceByExchange returns avg price for a specific exchange
@@ -260,23 +253,26 @@ func (h *Market) AveragePriceByExchange(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 	exchange := r.PathValue("exchange")
 	symbol := r.PathValue("symbol")
+	log := h.log.GetSlogLogger().With("symbol", symbol, "exchange", exchange)
+
+	v := validator.New()
+	if validateSymbol(v, symbol); !v.Valid() {
+		log.Error("failed to validate request", "errors", v.Errors)
+		errorResponse(w, http.StatusUnprocessableEntity, v.Errors)
+		return
+	}
 
 	result, err := h.market.GetAverage(ctx, exchange, symbol)
 	if err != nil {
 		if errors.Is(err, postgres.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"message": "no data yet, wait at least 1 minute"})
+			errorResponse(w, http.StatusNotFound, "no data yet, wait at least 1 minute")
 			return
 		}
 
-		h.log.Error(ctx, "failed to fetch data", "error", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.log.Error(ctx, "failed to fetch average price by exchange", "error", err)
+		internalErrorResponse(w, "failed to fetch average price by exchange")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		internalErrorResponse(w, "failed to encode json")
-		return
-	}
+	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
 }

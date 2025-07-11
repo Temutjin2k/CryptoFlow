@@ -2,8 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"maps"
+	"marketflow/pkg/logger"
 	"net/http"
+	"time"
 )
 
 type envelope map[string]any
@@ -23,7 +26,8 @@ func errorResponse(w http.ResponseWriter, status int, message any) {
 func writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
 	js, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
-		return err
+		http.Error(w, "failed to encode json", http.StatusInternalServerError)
+		return errors.New("failed to encode json")
 	}
 
 	js = append(js, '\n')
@@ -39,4 +43,15 @@ func writeJSON(w http.ResponseWriter, status int, data envelope, headers http.He
 
 func internalErrorResponse(w http.ResponseWriter, message any) {
 	errorResponse(w, http.StatusInternalServerError, message)
+}
+
+func parsePeriod(w http.ResponseWriter, r *http.Request, log logger.Logger) (time.Duration, bool) {
+	period := r.URL.Query().Get("period")
+	parsed, err := time.ParseDuration(period)
+	if err != nil {
+		log.Error(r.Context(), "invalid period format", "error", err)
+		errorResponse(w, http.StatusBadRequest, "invalid period format")
+		return 0, false
+	}
+	return parsed, true
 }
