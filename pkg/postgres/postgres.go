@@ -17,6 +17,7 @@ type PostgreDB struct {
 
 type Config struct {
 	Dsn          string `env:"POSTGRES_DSN"`
+	TestDsn      string `env:"TEST_POSTGRES_DSN"`
 	MaxOpenConns int32  `env:"POSTGRES_MAX_OPEN_CONN" default:"25"`
 	MaxIdleTime  string `env:"POSTGRES_MAX_IDLE_TIME" default:"15m"`
 }

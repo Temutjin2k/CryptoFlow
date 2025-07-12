@@ -37,11 +37,12 @@ type handlers struct {
 	mode   handler.DataMode
 }
 
-func New(cfg config.Config, market ports.Market, services []Service, logger logger.Logger) *API {
+func New(cfg config.Config, market ports.Market, manager ports.ExchangeManager,
+	testSources, liveSources []ports.ExchangeSource, services []Service, logger logger.Logger) *API {
 	addr := fmt.Sprintf(serverIPAddress, cfg.Server.HTTPServer.Port)
 
 	marketHandler := handler.NewMarket(market, logger)
-	dataModeHandler := handler.NewDataMode(logger)
+	dataModeHandler := handler.NewDataMode(manager, testSources, liveSources, logger)
 
 	handlers := &handlers{
 		market: *marketHandler,

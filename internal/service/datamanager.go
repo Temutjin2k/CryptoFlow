@@ -6,6 +6,7 @@ import (
 	"marketflow/internal/domain"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
+	"marketflow/pkg/postgres"
 )
 
 // ExchangeManager manages all working process related to exchanges
@@ -15,9 +16,19 @@ type ExchangeManager struct {
 	workerPools     []ports.WorkerPool
 	aggregator      ports.Aggregator
 	collector       ports.Collector
+	isLive          bool
 
 	workerCount int // number of workers per each distributor
 	logger      logger.Logger
+}
+
+type Core struct {
+	Market     ports.Market
+	Redis      ports.Cache
+	Postgres   *postgres.PostgreDB
+	Aggregator ports.Aggregator
+	Collector  ports.Collector
+	Logger     logger.Logger
 }
 
 func NewExchangeManager(
@@ -92,4 +103,34 @@ func (m *ExchangeManager) getWorkerPoolOutputs() []<-chan *domain.PriceData {
 		chans = append(chans, pool.Output())
 	}
 	return chans
+}
+func (m *ExchangeManager) SwitchCore(core Core) {
+	m.collector = core.Collector
+	m.aggregator = core.Aggregator
+	m.logger = core.Logger
+	// Пересоздай worker'ов, если надо (опц.)
+}
+
+func (m *ExchangeManager) SwitchToTest(sources []ports.ExchangeSource) error {
+	if !m.isLive {
+		return nil
+	}
+	m.Close()
+	m.exchangeSources = sources
+	m.isLive = false
+	return m.Start(context.Background())
+}
+
+func (m *ExchangeManager) SwitchToLive(sources []ports.ExchangeSource) error {
+	if m.isLive {
+		return nil
+	}
+	m.Close()
+	m.exchangeSources = sources
+	m.isLive = true
+	return m.Start(context.Background())
+}
+
+func (m *ExchangeManager) IsLive() bool {
+	return m.IsLive()
 }

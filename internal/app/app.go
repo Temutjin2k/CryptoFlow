@@ -59,10 +59,16 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 	// exchange2 := exchange.GenerateTestData()
 	// exchange3 := exchange.GenerateTestData()
 
-	sources := []ports.ExchangeSource{
+	liveSources := []ports.ExchangeSource{
 		exchange1,
 		exchange2,
 		exchange3,
+	}
+
+	testSources := []ports.ExchangeSource{
+		exchange.NewTestExchange("test1"),
+		exchange.NewTestExchange("test1"),
+		exchange.NewTestExchange("test1"),
 	}
 
 	//repository
@@ -70,7 +76,6 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 
 	// Market service
 	market := service.NewMarket(repo, cache, logger)
-
 	// Aggregator
 	aggregator := service.NewAggregator(repo, cache, config.DataManager.Aggregator.TickerDuration, logger)
 
@@ -78,8 +83,7 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 	collector := service.NewCollector(cache, nil, logger)
 
 	// ExchangeManager
-	exchangeManager := service.NewExchangeManager(sources, collector, aggregator, config.DataManager.Distributor.WorkerCount, logger)
-
+	exchangeManager := service.NewExchangeManager(liveSources, collector, aggregator, config.DataManager.Distributor.WorkerCount, logger)
 	scheduler := service.NewScheduler(ctx, logger)
 	scheduler.AddTask("Delete expired exchange history", types.TaskTypeInterval, config.Redis.HistoryDeleteDuration, cache.DeleteExpiredHistory)
 
@@ -93,7 +97,7 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 	}
 
 	// REST API server
-	httpServer := httpserver.New(config, market, serviceList, logger)
+	httpServer := httpserver.New(config, market, exchangeManager, testSources, liveSources, serviceList, logger)
 
 	app := &App{
 		httpServer:      httpServer,

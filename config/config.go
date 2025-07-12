@@ -17,6 +17,11 @@ type (
 		DataManager DataManager
 	}
 
+	Test struct {
+		Postgres postgres.Config
+		Redis    Redis
+	}
+
 	// Servers config
 	Server struct {
 		HTTPServer HTTPServer
@@ -28,9 +33,9 @@ type (
 	}
 
 	Redis struct {
-		Addr     string `env:"REDIS_ADDR"`
-		Password string `env:"REDIS_PASSWORD"`
-
+		Addr                  string        `env:"REDIS_ADDR"`
+		Password              string        `env:"REDIS_PASSWORD"`
+		TestAddr              string        `env:"TEST_REDIS_ADDR"`
 		HistoryDeleteDuration time.Duration `env:"REDIS_HISTORY_DELETE_DURATION" default:"5m"`
 	}
 
