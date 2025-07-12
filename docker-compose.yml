@@ -8,6 +8,9 @@ volumes:
   redis_data:
     name: contracts_redis_data
 
+  postgres_data: {} 
+
+
 services: 
   marketflow:
     container_name: marketflow
@@ -34,7 +37,7 @@ services:
     networks:
       - market-net
     volumes:
-      - ./data/postgresql:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: admin
@@ -45,6 +48,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
 
   migrate:
     image: migrate/migrate
