@@ -3,9 +3,10 @@ package domain
 import (
 	"encoding/json"
 	"fmt"
-	"marketflow/internal/domain/types"
 	"strings"
 	"time"
+
+	"marketflow/internal/domain/types"
 )
 
 type PriceData struct {

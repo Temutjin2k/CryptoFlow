@@ -2,9 +2,10 @@ package handler
 
 import (
 	"errors"
+	"net/http"
+
 	"marketflow/internal/domain"
 	"marketflow/pkg/logger"
-	"net/http"
 )
 
 type ModeSwitcher interface {

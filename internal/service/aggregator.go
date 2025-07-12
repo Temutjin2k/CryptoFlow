@@ -2,13 +2,14 @@ package service
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"marketflow/config"
 	"marketflow/internal/domain"
 	"marketflow/internal/domain/types"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
-	"sync"
-	"time"
 )
 
 type Aggregator struct {

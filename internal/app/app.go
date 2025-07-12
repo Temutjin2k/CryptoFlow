@@ -1,6 +1,12 @@
 package app
 
 import (
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"marketflow/config"
 	"marketflow/internal/adapter/exchange"
 	httpserver "marketflow/internal/adapter/http/server"
@@ -11,12 +17,6 @@ import (
 	"marketflow/internal/service"
 	"marketflow/pkg/logger"
 	"marketflow/pkg/postgres"
-
-	"context"
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 const serviceName = "marketflow"
@@ -65,7 +65,7 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 		exchange3,
 	}
 
-	//repository
+	// repository
 	repo := repo.NewMarketRepository(db.Pool)
 
 	// Market service

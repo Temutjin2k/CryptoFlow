@@ -7,7 +7,6 @@ import (
 
 // LoggingMiddleware wraps an http.Handler and logs requests
 func (m *API) LoggingMiddleware(next http.Handler) http.Handler {
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 

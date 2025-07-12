@@ -4,10 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+
 	"marketflow/config"
 	"marketflow/internal/app"
 	"marketflow/pkg/logger"
-	"os"
 )
 
 func Run() {

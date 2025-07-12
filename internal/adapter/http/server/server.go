@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"marketflow/config"
 	"marketflow/internal/adapter/http/handler"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
-	"net/http"
-	"time"
 )
 
 const serverIPAddress = "0.0.0.0:%d"

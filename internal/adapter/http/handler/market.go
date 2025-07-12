@@ -2,12 +2,13 @@ package handler
 
 import (
 	"errors"
+	"net/http"
+
 	"marketflow/internal/domain"
 	"marketflow/internal/domain/types"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
 	"marketflow/pkg/validator"
-	"net/http"
 )
 
 type Market struct {
@@ -150,7 +151,6 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 	}
 
 	result, err := h.market.GetHighest(ctx, types.Exchange(exchange), types.Symbol(symbol), periodParsed)
-
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			notFoundErrorResponse(w)

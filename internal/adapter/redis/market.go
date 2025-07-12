@@ -5,17 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"marketflow/internal/domain"
-	"marketflow/internal/domain/types"
 	"sort"
 	"time"
+
+	"marketflow/internal/domain"
+	"marketflow/internal/domain/types"
 
 	goredis "github.com/redis/go-redis/v9"
 )
 
-var (
-	ErrNotFound = errors.New("value with given key not found")
-)
+var ErrNotFound = errors.New("value with given key not found")
 
 // SetLatest saves PriceData into Redis 2 keys(by exchange and symbol, and by symbol only) with given TTL(Time-To-Live)
 func (c *Cache) SetLatest(ctx context.Context, latest *domain.PriceData, ttl time.Duration) error {

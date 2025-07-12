@@ -2,10 +2,11 @@ package exchange
 
 import (
 	"context"
-	"marketflow/internal/domain"
-	"marketflow/internal/domain/types"
 	"math/rand"
 	"time"
+
+	"marketflow/internal/domain"
+	"marketflow/internal/domain/types"
 )
 
 type TestExchangeSource struct {
@@ -84,5 +85,4 @@ func generateRandomPrice(symbol types.Symbol, r *rand.Rand) float64 {
 	default:
 		return 66 * (1 + (r.Float64()-0.5)*0.3)
 	}
-
 }

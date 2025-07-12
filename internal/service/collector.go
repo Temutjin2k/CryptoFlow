@@ -3,10 +3,11 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
+
 	"marketflow/internal/domain"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
-	"time"
 )
 
 type Collector struct {

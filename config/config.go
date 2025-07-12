@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
+	"time"
+
 	"marketflow/pkg/envcfg"
 	"marketflow/pkg/loadenv"
 	"marketflow/pkg/postgres"
-	"time"
 )
 
 type (
