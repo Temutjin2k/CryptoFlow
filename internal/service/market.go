@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
+	"time"
+
 	"marketflow/internal/domain"
 	"marketflow/internal/domain/types"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
-	"time"
 )
 
 type Market struct {

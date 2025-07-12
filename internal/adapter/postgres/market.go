@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"marketflow/internal/domain"
 	"marketflow/internal/domain/types"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -95,7 +96,6 @@ func (r *MarketRepo) GetHighestStat(ctx context.Context, exchange types.Exchange
 		&stats.Max,
 		&stats.Timestamp,
 	)
-
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -147,7 +147,6 @@ func (r *MarketRepo) GetLowestStat(ctx context.Context, exchange types.Exchange,
 		&stats.Min,
 		&stats.Timestamp,
 	)
-
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -197,7 +196,6 @@ func (r *MarketRepo) GetAverageStat(ctx context.Context, exchange types.Exchange
 		&stats.Average,
 		&stats.Timestamp,
 	)
-
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil

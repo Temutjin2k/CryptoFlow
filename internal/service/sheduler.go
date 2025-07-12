@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
-	"marketflow/internal/domain/types"
-	"marketflow/pkg/logger"
 	"runtime/debug"
 	"sync"
 	"time"
+
+	"marketflow/internal/domain/types"
+	"marketflow/pkg/logger"
 )
 
 // Task представляет задачу, которую нужно периодически выполнять

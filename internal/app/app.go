@@ -1,6 +1,12 @@
 package app
 
 import (
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"marketflow/config"
 	"marketflow/internal/adapter/exchange"
 	httpserver "marketflow/internal/adapter/http/server"
@@ -11,12 +17,6 @@ import (
 	"marketflow/internal/service"
 	"marketflow/pkg/logger"
 	"marketflow/pkg/postgres"
-
-	"context"
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 const serviceName = "marketflow"
@@ -59,27 +59,22 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 	// exchange2 := exchange.GenerateTestData()
 	// exchange3 := exchange.GenerateTestData()
 
-	sources := []ports.ExchangeSource{
+	liveSources := []ports.ExchangeSource{
 		exchange1,
 		exchange2,
 		exchange3,
 	}
 
-	//repository
+	// repository
 	repo := repo.NewMarketRepository(db.Pool)
 
 	// Market service
 	market := service.NewMarket(repo, cache, logger)
 
-	// Aggregator
-	aggregator := service.NewAggregator(repo, cache, config.DataManager.Aggregator.TickerDuration, logger)
-
-	// DataCollector
-	collector := service.NewCollector(cache, nil, logger)
-
 	// ExchangeManager
-	exchangeManager := service.NewExchangeManager(sources, collector, aggregator, config.DataManager.Distributor.WorkerCount, logger)
+	exchangeManager := service.NewExchangeManager(true, liveSources, repo, cache, config.DataManager, logger)
 
+	// Scheduler
 	scheduler := service.NewScheduler(ctx, logger)
 	scheduler.AddTask("Delete expired exchange history", types.TaskTypeInterval, config.Redis.HistoryDeleteDuration, cache.DeleteExpiredHistory)
 
@@ -93,7 +88,7 @@ func NewApplication(ctx context.Context, config config.Config, logger logger.Log
 	}
 
 	// REST API server
-	httpServer := httpserver.New(config, market, serviceList, logger)
+	httpServer := httpserver.New(config, market, exchangeManager, serviceList, exchangeManager, logger)
 
 	app := &App{
 		httpServer:      httpServer,
@@ -123,7 +118,6 @@ func (app *App) close(ctx context.Context) {
 
 	// Closing redis
 	app.redis.Close()
-
 }
 
 func (app *App) Run() error {

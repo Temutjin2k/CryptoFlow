@@ -2,12 +2,13 @@ package handler
 
 import (
 	"errors"
+	"net/http"
+
 	"marketflow/internal/domain"
 	"marketflow/internal/domain/types"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
 	"marketflow/pkg/validator"
-	"net/http"
 )
 
 type Market struct {
@@ -99,7 +100,7 @@ func (h *Market) HighestPrice(w http.ResponseWriter, r *http.Request) {
 
 	v := validator.New()
 
-	periodParsed, err := parsePeriod(period)
+	periodParsed, normalizedPeriod, err := parsePeriod(period)
 	if err != nil {
 		v.AddError("period", err.Error())
 	}
@@ -121,7 +122,7 @@ func (h *Market) HighestPrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
+	writeJSON(w, http.StatusOK, envelope{"data": result, "period": normalizedPeriod}, nil)
 }
 
 // HighestPriceByExchange returns highest price for a sprcific exchange
@@ -136,7 +137,7 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 
 	v := validator.New()
 
-	periodParsed, err := parsePeriod(period)
+	periodParsed, normalizedPeriod, err := parsePeriod(period)
 	if err != nil {
 		v.AddError("period", err.Error())
 	}
@@ -150,7 +151,6 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 	}
 
 	result, err := h.market.GetHighest(ctx, types.Exchange(exchange), types.Symbol(symbol), periodParsed)
-
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			notFoundErrorResponse(w)
@@ -162,7 +162,7 @@ func (h *Market) HighestPriceByExchange(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
+	writeJSON(w, http.StatusOK, envelope{"data": result, "period": normalizedPeriod}, nil)
 }
 
 // LOWEST
@@ -178,7 +178,7 @@ func (h *Market) LowestPrice(w http.ResponseWriter, r *http.Request) {
 
 	v := validator.New()
 
-	periodParsed, err := parsePeriod(period)
+	periodParsed, normalizedPeriod, err := parsePeriod(period)
 	if err != nil {
 		v.AddError("period", err.Error())
 	}
@@ -201,7 +201,7 @@ func (h *Market) LowestPrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
+	writeJSON(w, http.StatusOK, envelope{"data": result, "period": normalizedPeriod}, nil)
 }
 
 // LowestPriceByExchange returns lowest price for a specific exchange
@@ -215,8 +215,7 @@ func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 	log := h.log.GetSlogLogger().With("symbol", symbol, "exchange", exchange)
 
 	v := validator.New()
-
-	periodParsed, err := parsePeriod(period)
+	periodParsed, normalizedPeriod, err := parsePeriod(period)
 	if err != nil {
 		v.AddError("period", err.Error())
 	}
@@ -241,7 +240,7 @@ func (h *Market) LowestPriceByExchange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
+	writeJSON(w, http.StatusOK, envelope{"data": result, "period": normalizedPeriod}, nil)
 }
 
 // AVERAGE
@@ -257,7 +256,7 @@ func (h *Market) AveragePrice(w http.ResponseWriter, r *http.Request) {
 
 	v := validator.New()
 
-	periodParsed, err := parsePeriod(period)
+	periodParsed, normalizedPeriod, err := parsePeriod(period)
 	if err != nil {
 		v.AddError("period", err.Error())
 	}
@@ -280,7 +279,7 @@ func (h *Market) AveragePrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
+	writeJSON(w, http.StatusOK, envelope{"data": result, "period": normalizedPeriod}, nil)
 }
 
 // AveragePriceByExchange returns avg price for a specific exchange
@@ -295,7 +294,7 @@ func (h *Market) AveragePriceByExchange(w http.ResponseWriter, r *http.Request) 
 
 	v := validator.New()
 
-	periodParsed, err := parsePeriod(period)
+	periodParsed, normalizedPeriod, err := parsePeriod(period)
 	if err != nil {
 		v.AddError("period", err.Error())
 	}
@@ -320,5 +319,5 @@ func (h *Market) AveragePriceByExchange(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	writeJSON(w, http.StatusOK, envelope{"data": result}, nil)
+	writeJSON(w, http.StatusOK, envelope{"data": result, "period": normalizedPeriod}, nil)
 }

@@ -5,11 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"time"
+
 	"marketflow/internal/domain"
 	"marketflow/internal/domain/types"
 	"marketflow/pkg/logger"
-	"net"
-	"time"
 )
 
 // Exchange represent single exchange data source

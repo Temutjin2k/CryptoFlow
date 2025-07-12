@@ -3,15 +3,15 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
+
 	"marketflow/internal/domain"
 	"marketflow/internal/ports"
 	"marketflow/pkg/logger"
-	"time"
 )
 
 type Collector struct {
 	cache ports.Cache
-	store ports.MarketRepository
 
 	cancelFunc context.CancelFunc
 	doneChan   chan struct{}
@@ -19,10 +19,9 @@ type Collector struct {
 	logger logger.Logger
 }
 
-func NewCollector(cache ports.Cache, store ports.MarketRepository, logger logger.Logger) *Collector {
+func NewCollector(cache ports.Cache, logger logger.Logger) *Collector {
 	return &Collector{
 		cache:    cache,
-		store:    store,
 		doneChan: make(chan struct{}),
 		logger:   logger,
 	}

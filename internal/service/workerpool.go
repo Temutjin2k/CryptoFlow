@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 	"errors"
+	"sync"
+
 	"marketflow/internal/domain"
 	"marketflow/pkg/logger"
-	"sync"
 )
 
 // WorkerPool represents a pool of workers for processing PriceData
