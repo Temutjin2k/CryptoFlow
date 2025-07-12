@@ -12,13 +12,11 @@ var (
 	Exchange1    Exchange = "exchange1"
 	Exchange2    Exchange = "exchange2"
 	Exchange3    Exchange = "exchange3"
-	TestExchange Exchange = "test1"
 
 	ValidExchanges = []Exchange{
 		Exchange1,
 		Exchange2,
 		Exchange3,
-		TestExchange,
 	}
 )
 

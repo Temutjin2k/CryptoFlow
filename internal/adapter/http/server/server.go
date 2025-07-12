@@ -20,6 +20,10 @@ type Service interface {
 	Health(ctx context.Context) (bool, error)
 }
 
+type ModeProvider interface {
+	Mode() string
+}
+
 type API struct {
 	cfg    config.HTTPServer
 	router *http.ServeMux
@@ -27,9 +31,10 @@ type API struct {
 
 	addr string
 
-	routes   *handlers // routes/handlers
-	services []Service
-	log      logger.Logger
+	routes       *handlers // routes/handlers
+	services     []Service
+	modeProvider ModeProvider
+	log          logger.Logger
 }
 
 type handlers struct {
@@ -37,12 +42,18 @@ type handlers struct {
 	mode   handler.DataMode
 }
 
-func New(cfg config.Config, market ports.Market, manager ports.ExchangeManager,
-	testSources, liveSources []ports.ExchangeSource, services []Service, logger logger.Logger) *API {
+func New(
+	cfg config.Config,
+	market ports.Market,
+	manager handler.ModeSwitcher,
+	services []Service,
+	modeProvider ModeProvider,
+	logger logger.Logger,
+) *API {
 	addr := fmt.Sprintf(serverIPAddress, cfg.Server.HTTPServer.Port)
 
 	marketHandler := handler.NewMarket(market, logger)
-	dataModeHandler := handler.NewDataMode(manager, testSources, liveSources, logger)
+	dataModeHandler := handler.NewDataMode(manager, logger)
 
 	handlers := &handlers{
 		market: *marketHandler,
@@ -57,9 +68,10 @@ func New(cfg config.Config, market ports.Market, manager ports.ExchangeManager,
 		routes:   handlers,
 		services: services,
 
-		addr: addr,
-		cfg:  cfg.Server.HTTPServer,
-		log:  logger,
+		addr:         addr,
+		cfg:          cfg.Server.HTTPServer,
+		modeProvider: modeProvider,
+		log:          logger,
 	}
 
 	api.server = &http.Server{

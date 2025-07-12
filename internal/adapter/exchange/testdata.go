@@ -9,52 +9,47 @@ import (
 )
 
 type TestExchangeSource struct {
-	name string
-	stop chan struct{}
+	name   types.Exchange
+	cancel context.CancelFunc
 }
 
-func NewTestExchange(name string) *TestExchangeSource {
+func NewTestExchange(name types.Exchange) *TestExchangeSource {
 	return &TestExchangeSource{
 		name: name,
-		stop: make(chan struct{}),
 	}
-}
-
-func (t *TestExchangeSource) Name() string {
-	return t.name
 }
 
 func (t *TestExchangeSource) Start(ctx context.Context) (<-chan *domain.PriceData, error) {
 	out := make(chan *domain.PriceData)
 
+	ctx, cancel := context.WithCancel(ctx)
+	t.cancel = cancel
+
 	go func() {
-		symbols := []types.Symbol{
-			types.BTCUSDT,
-			types.ETHUSDT,
-			types.SOLUSDT,
-			types.TONUSDT,
-			types.DOGEUSDT,
-		}
+		defer close(out) // Ensure channel is always closed
+		symbols := types.ValidSymbols
+
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
 
 		for {
 			select {
 			case <-ctx.Done():
-				close(out)
-				return
-			case <-t.stop:
-				close(out)
-				return
-			default:
+				return // Context cancellation
+			case <-ticker.C:
 				for _, symbol := range symbols {
-					out <- &domain.PriceData{
-						Exchange:  types.TestExchange,
+					select {
+					case out <- &domain.PriceData{
+						Exchange:  t.name,
 						Symbol:    symbol,
 						Price:     generateRandomPrice(symbol, r),
 						Timestamp: time.Now(),
+					}:
+					case <-ctx.Done():
+						return
 					}
 				}
-				time.Sleep(100 * time.Millisecond)
 			}
 		}
 	}()
@@ -63,24 +58,31 @@ func (t *TestExchangeSource) Start(ctx context.Context) (<-chan *domain.PriceDat
 }
 
 func (t *TestExchangeSource) Close() error {
-	close(t.stop)
+	if t.cancel != nil {
+		t.cancel() // canceling context to stop the gouroutine
+	}
 	return nil
+}
+
+func (t *TestExchangeSource) Name() string {
+	return string(t.name)
 }
 
 // generateRandomPrice generates random price fluctuation (±15%)
 func generateRandomPrice(symbol types.Symbol, r *rand.Rand) float64 {
 	switch symbol {
 	case types.BTCUSDT:
-		return 10 + r.Float64()*2 // 10 - 12
+		return 100000 * (1 + (r.Float64()-0.5)*0.3)
 	case types.ETHUSDT:
-		return 5 + r.Float64()*2 // 5 - 7
+		return 5000 * (1 + (r.Float64()-0.5)*0.3)
 	case types.SOLUSDT:
-		return 2 + r.Float64()*1.5 // 2 - 3.5
+		return 200 * (1 + (r.Float64()-0.5)*0.3)
 	case types.TONUSDT:
-		return 1 + r.Float64()*1 // 1 - 2
+		return 99 * (1 + (r.Float64()-0.5)*0.3)
 	case types.DOGEUSDT:
-		return 0.1 + r.Float64()*0.1 // 0.1 - 0.2
+		return 0.27 * (1 + (r.Float64()-0.5)*0.3)
 	default:
-		return 5 + r.Float64()*1 // 5 - 6
+		return 66 * (1 + (r.Float64()-0.5)*0.3)
 	}
+
 }

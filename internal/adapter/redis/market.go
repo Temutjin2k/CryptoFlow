@@ -121,6 +121,7 @@ func (c *Cache) StoreHistory(ctx context.Context, p *domain.PriceData) error {
 	symbolKey := c.createHistoryKeyBySymbol(p.Symbol)
 	pipe.ZAdd(ctx, symbolKey, goredis.Z{Score: score, Member: value})
 
+	// Keys will expire in hour
 	pipe.Expire(ctx, exchangeKey, time.Hour)
 	pipe.Expire(ctx, symbolKey, time.Hour)
 

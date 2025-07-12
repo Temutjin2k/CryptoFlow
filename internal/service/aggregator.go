@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"marketflow/config"
 	"marketflow/internal/domain"
 	"marketflow/internal/domain/types"
 	"marketflow/internal/ports"
@@ -11,18 +12,18 @@ import (
 )
 
 type Aggregator struct {
-	storage        ports.MarketRepository
-	cache          ports.Cache
-	tickerDuration time.Duration
+	storage ports.MarketRepository
+	cache   ports.Cache
 
+	cfg    config.Aggregator
 	logger logger.Logger
 }
 
-func NewAggregator(storage ports.MarketRepository, cache ports.Cache, tickerDuration time.Duration, logger logger.Logger) *Aggregator {
+func NewAggregator(storage ports.MarketRepository, cache ports.Cache, cfg config.Aggregator, logger logger.Logger) *Aggregator {
 	return &Aggregator{
-		storage:        storage,
-		cache:          cache,
-		tickerDuration: tickerDuration,
+		storage: storage,
+		cache:   cache,
+		cfg:     cfg,
 
 		logger: logger,
 	}
@@ -67,7 +68,7 @@ func (a *Aggregator) FanIn(ctx context.Context, inputs ...<-chan *domain.PriceDa
 
 func (a *Aggregator) Start(ctx context.Context) {
 	go func() {
-		ticker := time.NewTicker(a.tickerDuration)
+		ticker := time.NewTicker(a.cfg.TickerDuration)
 		defer ticker.Stop()
 
 		for {

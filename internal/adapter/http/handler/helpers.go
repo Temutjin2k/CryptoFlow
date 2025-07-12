@@ -62,5 +62,9 @@ func parsePeriod(period string) (time.Duration, string, error) {
 		return -1, "", errors.New("invalid period format. should be positive non-zero value (e.g. 1s, 5s, 1m, 3m)")
 	}
 
+	if parsed > time.Minute*5 {
+		return -1, "", errors.New("must be less than 5 minutes")
+	}
+
 	return parsed, period, nil
 }

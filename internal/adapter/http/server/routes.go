@@ -82,7 +82,7 @@ func (a *API) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	response := map[string]any{
 		"system_info": map[string]any{
 			"address":       a.addr,
-			"data_mode":     "Live",
+			"data_mode":     a.modeProvider.Mode(),
 			"status":        status,
 			"total_healthy": healthyServices,
 			"total":         totalServices,

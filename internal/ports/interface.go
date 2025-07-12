@@ -18,9 +18,6 @@ type Cache interface {
 type ExchangeManager interface {
 	Start(ctx context.Context) error
 	Close() error
-	SwitchToTest(sources []ExchangeSource) error
-	SwitchToLive(sources []ExchangeSource) error
-	IsLive() bool
 }
 
 // postgres
