@@ -18,5 +18,6 @@ WORKDIR /root/
 COPY --from=builder /app/marketflow .
 
 COPY .env .env
+COPY --from=builder /app/frontend ./frontend
 
 CMD ["./marketflow"]
