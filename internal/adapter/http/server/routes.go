@@ -7,6 +7,9 @@ import (
 
 // setupRoutes - setups http routes
 func (a *API) setupRoutes() {
+	// Frontend
+	a.router.Handle("/", http.FileServer(http.Dir("./frontend")))
+
 	// System Health
 	a.router.HandleFunc("/health", a.HealthCheck)
 

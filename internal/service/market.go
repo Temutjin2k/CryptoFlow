@@ -134,7 +134,7 @@ func (s *Market) fetchLowestFromCache(ctx context.Context, exchange types.Exchan
 		Exchange:  exchange,
 		Pair:      symbol,
 		Timestamp: min.Timestamp,
-		Max:       min.Price,
+		Min:       min.Price,
 	}, nil
 }
 
@@ -182,6 +182,6 @@ func (s *Market) fetchAverageFromCache(ctx context.Context, exchange types.Excha
 		Exchange:  exchange,
 		Pair:      symbol,
 		Timestamp: avg.Timestamp,
-		Max:       avg.Price,
+		Average:   avg.Price,
 	}, nil
 }

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketflow</title>
+    <link rel="icon" type="image/png" href="fav-icon.ico?v=1"/>
+    <!-- <a href="https://www.flaticon.com/ru/free-icons/" title="монета иконки">Монета иконки от Freepik - Flaticon</a> -->
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-chart-line"></i> Marketflow Dashboard</h1>
+      <div class="theme-toggle">
+        <i class="fas fa-moon"></i>
+        <label class="switch">
+          <input type="checkbox" id="theme-switch">
+          <span class="slider round"></span>
+        </label>
+        <i class="fas fa-sun"></i>
+      </div>
+    </header>
+
+    <div class="dashboard">
+      <!-- Latest Prices -->
+      <section id="latest-section">
+        <div class="section-header">
+          <h2><i class="fas fa-sync-alt"></i> Latest Prices</h2>
+          <div class="last-updated">Updated: <span id="last-updated-time">Just now</span></div>
+        </div>
+        <div id="latest-prices" class="price-list"></div>
+      </section>
+
+      <!-- Aggregated Stats -->
+      <section id="aggregated-section">
+        <div class="section-header">
+          <h2><i class="fas fa-chart-pie"></i> Aggregated Stats</h2>
+        </div>
+        <div class="filters">
+          <div class="filter-group">
+            <label for="metric-select">Metric</label>
+            <select id="metric-select">
+              <option value="highest"><i class="fas fa-arrow-up"></i> Highest</option>
+              <option value="lowest"><i class="fas fa-arrow-down"></i> Lowest</option>
+              <option value="average"><i class="fas fa-balance-scale"></i> Average</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="symbol-select">Symbol</label>
+            <select id="symbol-select">
+              <option value="BTCUSDT"><i class="fab fa-bitcoin"></i> BTCUSDT</option>
+              <option value="DOGEUSDT"><i class="fas fa-dog"></i> DOGEUSDT</option>
+              <option value="TONUSDT">TONUSDT</option>
+              <option value="SOLUSDT">SOLUSDT</option>
+              <option value="ETHUSDT"><i class="fab fa-ethereum"></i> ETHUSDT</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="exchange-select">Exchange</label>
+            <select id="exchange-select">
+              <option value="">ALL</option>
+              <option value="exchange1">Binance</option>
+              <option value="exchange2">Coinbase</option>
+              <option value="exchange3">Kraken</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="period-input">Period</label>
+            <select id="period-input">
+              <optgroup label="Seconds">
+                <option value="1s">1s</option>
+                <option value="5s">5s</option>
+                <option value="10s">10s</option>
+                <option value="15s">15s</option>
+                <option value="30s">30s</option>
+                <option value="45s">45s</option>
+                <option value="59s">59s</option>
+              </optgroup>
+              <optgroup label="Minutes">
+                <option value="1m" selected>1m</option>
+                <option value="2m">2m</option>
+                <option value="3m">3m</option>
+                <option value="4m">4m</option>
+                <option value="5m">5m</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <button class="fetch-button" onclick="fetchAggregated()">
+            <i class="fas fa-download"></i> Get Data
+          </button>
+        </div>
+        <div id="aggregated-result" class="aggregated-box">
+          <div class="placeholder">
+            <i class="fas fa-chart-bar"></i>
+            <p>Select filters and click "Get Data" to view aggregated statistics</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
