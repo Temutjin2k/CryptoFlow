@@ -75,24 +75,32 @@ async function fetchAggregated() {
         else if (metric === "average") value = result.data?.average;
 
         if (value === undefined) {
-            container.innerHTML = `<p>No ${metric} data available for this period.</p>`;
+            container.innerHTML = `<p class="no-data">No ${metric} data available for this period.</p>`;
             return;
         }
 
         const exchangeDisplay = result.data.exchange === "all" ? "ALL Exchanges" : result.data.exchange.toUpperCase();
+        const metricDisplay = {
+            'highest': 'Highest',
+            'lowest': 'Lowest',
+            'average': 'Average'
+        }[metric];
 
         container.innerHTML = `
-            <strong>Metric:</strong> ${metric.toUpperCase()}<br>
-            <strong>Symbol:</strong> ${result.data.symbol}<br>
-            <strong>Exchange:</strong> ${exchangeDisplay}<br>
-            <strong>Period:</strong> ${result.period}<br>
-            <strong>Value:</strong> ${value.toFixed(2)}<br>
-            <strong>Timestamp:</strong> ${new Date(result.data.timestamp).toLocaleString()}
+            <div class="stats-container">
+                <div class="stat-line"><span class="stat-label">Metric:</span> <span class="stat-value">${metricDisplay}</span></div>
+                <div class="stat-line"><span class="stat-label">Symbol:</span> <span class="stat-value">${result.data.symbol}</span></div>
+                <div class="stat-line"><span class="stat-label">Exchange:</span> <span class="stat-value">${exchangeDisplay}</span></div>
+                <div class="stat-line"><span class="stat-label">Period:</span> <span class="stat-value">${result.period}</span></div>
+                <div class="stat-line"><span class="stat-label">Price:</span> <span class="stat-value">${value.toFixed(2)}$</span></div>
+                <div class="stat-line"><span class="stat-label">Timestamp:</span> <span class="stat-value">${new Date(result.data.timestamp).toLocaleString()}</span></div>
+            </div>
         `;
     } catch (e) {
         console.error("Fetch error:", e);
-        container.innerHTML = "Failed to load aggregated data.";
+        container.innerHTML = '<p class="error-message">Failed to load aggregated data.</p>';
     }
 }
+
 
 fetchLatestPrices();

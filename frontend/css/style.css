@@ -363,3 +363,35 @@ html.transition *:after {
   transition: all 0.3s ease !important;
   transition-delay: 0 !important;
 }
+
+
+.stats-container {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-line {
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.stat-label {
+    font-weight: bold;
+    color: #495057;
+    display: inline-block;
+    min-width: 80px;
+}
+
+.stat-value {
+    color: #212529;
+}
+
+.no-data, .error-message {
+    text-align: center;
+    padding: 20px;
+    color: #dc3545;
+    font-weight: 500;
+}
