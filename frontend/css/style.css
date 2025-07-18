@@ -364,12 +364,12 @@ html.transition *:after {
   transition-delay: 0 !important;
 }
 
-
 .stats-container {
     padding: 15px;
-    background: #f8f9fa;
+    background: var(--card-bg);
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
 }
 
 .stat-line {
@@ -380,18 +380,18 @@ html.transition *:after {
 
 .stat-label {
     font-weight: bold;
-    color: #495057;
+    color: var(--secondary-color);
     display: inline-block;
     min-width: 80px;
 }
 
 .stat-value {
-    color: #212529;
+    color: var(--text-color);
 }
 
 .no-data, .error-message {
     text-align: center;
     padding: 20px;
-    color: #dc3545;
+    color: var(--negative-color);
     font-weight: 500;
 }
