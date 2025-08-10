@@ -77,6 +77,53 @@ Import this collection into Postman to quickly test all available endpoints incl
 
 ---
 
+## Concurrency Implementation and Patterns:
+This project heavily relies on concurrency to handle large volumes of real-time data. Key concurrency patterns that were used include:
+
+- **Fan-in:** Aggregating multiple market data streams into a single channel for centralized processing.
+
+- **Fan-out:** Distributing incoming data updates to multiple workers to process them in parallel.
+
+- **[Worker Pool](https://gobyexample.com/worker-pools):** Managing a set of workers that process live updates efficiently, ensuring balanced workload distribution.
+
+- **Generator:** Implementing a generator to produce synthetic market data for `Test Mode`.
+
+
+
+                      +---------------+       +---------------+       +---------------+
+                      |  Source 1     |       |  Source 2     |       |  Source 3     |
+                      |  (Generator)  |       |  (Generator)  |       |  (Generator)  |
+                      +-------+-------+       +-------+-------+       +-------+-------+
+                              |                       |                       |
+                              v                       v                       v
+                      +-------+-------+       +-------+-------+       +-------+-------+
+                      |   Fan-Out 1   |       |   Fan-Out 2   |       |   Fan-Out 3   |
+                      |  (Distributor)|       |  (Distributor)|       |  (Distributor)|
+                      +---+---+---+---+       +---+---+---+---+       +---+---+---+---+
+                          |   |   |               |   |   |               |   |   |
+          +---------------+-+-+-+-+-+-------------+-+-+-+-+-+---------------------------+
+          |               | | | | | |                 | | | | | |                       |
+          v               v v v v v v                 v v v v v v                       v
+      +---+---+       +---+---+---+---+-----+       +---+---+---+---+---+---+       +---+---+
+      |Worker1|       |Worker2| ... |WorkerN|       |WorkerN+1| ... |WorkerM|      |WorkerM+1|
+      +---+---+       +---+---+---+---+-----+       +---+---+---+---+---+---+       +---+---+
+          |               |                   ...       |                   ...         |
+          +---------------+-----------------------------+-------------------------------+
+                              | (all output channels)
+                              v
+                      +-------+-------+
+                      |    Fan-In     |
+                      |  (Aggregator) |
+                      +-------+-------+
+                              | (resultCh)
+                              v
+                      +-------+-------+
+                      |   Receiver    |
+                      | (Collector)   |
+                      +---------------+
+
+--- 
+
 ## Authors
 
 * **Meruyert** — Database, API, frontend
